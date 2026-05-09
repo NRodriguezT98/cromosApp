@@ -1,7 +1,7 @@
-import React, { useRef, useState, useMemo, useCallback } from 'react';
+import React, { useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Modal, View, Text, Pressable, StyleSheet, ActivityIndicator,
-  ScrollView, TextInput, KeyboardAvoidingView, Platform,
+  ScrollView, TextInput, KeyboardAvoidingView, Platform, Animated,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import TextRecognition from '@react-native-ml-kit/text-recognition';
@@ -33,6 +33,20 @@ export function ScannerModal({ visible, onClose }: Props) {
   const [noMatch, setNoMatch]       = useState(false);
   const [registered, setRegistered] = useState<Registered[]>([]);
   const [manualQuery, setManualQuery] = useState('');
+
+  // Toast
+  const [toastMsg, setToastMsg]   = useState('');
+  const toastAnim                  = useRef(new Animated.Value(0)).current;
+
+  const showToast = useCallback((msg: string) => {
+    setToastMsg(msg);
+    toastAnim.setValue(0);
+    Animated.sequence([
+      Animated.spring(toastAnim, { toValue: 1, useNativeDriver: true, tension: 80, friction: 10 }),
+      Animated.delay(2000),
+      Animated.timing(toastAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+    ]).start();
+  }, [toastAnim]);
 
   const stickerMap = useMemo(() => {
     const m = new Map<string, Sticker>();
@@ -105,6 +119,7 @@ export function ScannerModal({ visible, onClose }: Props) {
       });
       return next;
     });
+    showToast(`¡Agregaste ${selected.length} cromo${selected.length > 1 ? 's' : ''}! 🎉`);
     setCandidates([]);
     setPhase('camera');
     setNoMatch(false);
@@ -123,6 +138,7 @@ export function ScannerModal({ visible, onClose }: Props) {
       }
       return [{ sticker, qty }, ...prev];
     });
+    showToast(`✓ ${sticker.code} – ${sticker.name}`);
     setManualQuery('');
   };
 
@@ -211,9 +227,9 @@ export function ScannerModal({ visible, onClose }: Props) {
               }
             </View>
 
-            {/* Manual entry shortcut */}
+            {/* Manual entry shortcut — below capture button, centrado */}
             <Pressable style={styles.manualFab} onPress={() => setPhase('manual')}>
-              <KeyboardIcon size={16} color="#fff" weight="bold" />
+              <KeyboardIcon size={14} color="rgba(255,255,255,0.8)" weight="bold" />
               <Text style={styles.manualFabLabel}>Ingresar manualmente</Text>
             </Pressable>
           </>
@@ -377,6 +393,27 @@ export function ScannerModal({ visible, onClose }: Props) {
             </ScrollView>
           </View>
         )}
+
+        {/* ── Toast ── */}
+        {toastMsg !== '' && (
+          <Animated.View
+            style={[
+              styles.toast,
+              {
+                opacity: toastAnim,
+                transform: [{
+                  translateY: toastAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [30, 0],
+                  }),
+                }],
+              },
+            ]}
+            pointerEvents="none"
+          >
+            <Text style={styles.toastText}>{toastMsg}</Text>
+          </Animated.View>
+        )}
       </View>
     </Modal>
   );
@@ -439,12 +476,25 @@ const styles = StyleSheet.create({
   captureBtnInner: { width: 56, height: 56, borderRadius: 28, backgroundColor: Colors.red },
 
   manualFab: {
-    position: 'absolute', bottom: 88, right: 24,
+    position: 'absolute', bottom: 28, alignSelf: 'center',
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: 'rgba(0,0,0,0.65)', paddingHorizontal: 14, paddingVertical: 9,
-    borderRadius: Radii.full, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(0,0,0,0.55)', paddingHorizontal: 16, paddingVertical: 8,
+    borderRadius: Radii.full, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
   },
-  manualFabLabel: { fontFamily: 'DMSans_500Medium', fontSize: 12, color: '#fff' },
+  manualFabLabel: { fontFamily: 'DMSans_500Medium', fontSize: 12, color: 'rgba(255,255,255,0.8)' },
+
+  toast: {
+    position: 'absolute', bottom: 170, alignSelf: 'center',
+    backgroundColor: 'rgba(15,20,35,0.92)',
+    paddingHorizontal: 20, paddingVertical: 12,
+    borderRadius: Radii.full,
+    borderWidth: 1, borderColor: Colors.owned + '60',
+    shadowColor: Colors.owned, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
+  },
+  toastText: {
+    fontFamily: 'DMSans_700Bold', fontSize: 14,
+    color: Colors.owned, textAlign: 'center',
+  },
 
   resultSheet: {
     position: 'absolute', bottom: 0, left: 0, right: 0,

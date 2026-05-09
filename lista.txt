@@ -1,12 +1,12 @@
 00 Panini Logo FOIL
-FWC1 Official Emblem FOIL
-FWC2 Official Emblem FOIL
+FWC1 Official Emblem 1/2 FOIL
+FWC2 Official Emblem 2/2 FOIL
 FWC3 Official Mascots FOIL
 FWC4 Official Slogan FOIL
 FWC5 Official Ball FOIL
-FWC6 Canada - Host Countries & Cities FOIL
-FWC7 Mexico - Host Countries & Cities FOIL
-FWC8 USA - Host Countries & Cities FOIL
+FWC6 Canada - Host Country Emblem FOIL
+FWC7 Mexico - Host Country Emblem FOIL
+FWC8 USA - Host Country Emblem FOIL
 MEX1 Team Logo - Mexico FOIL
 MEX2 Luis Malagón - Mexico
 MEX3 Johan Vasquez - Mexico
@@ -967,17 +967,17 @@ PAN17 Jose Fajardo - Panama
 PAN18 Cecilio Waterman - Panama
 PAN19 Jose Luiz Rodriguez - Panama
 PAN20 Alberto Quintero - Panama
-FWC9 Italy 1934 - FIFA Museum FOIL
-FWC10 Uruguay 1950 - FIFA Museum FOIL
-FWC11 West Germany 1954 - FIFA Museum FOIL
-FWC12 Brazil 1962 - FIFA Museum FOIL
-FWC13 West Germany 1974 - FIFA Museum FOIL
-FWC14 Argentina 1986 - FIFA Museum FOIL
-FWC15 Brazil 1994 - FIFA Museum FOIL
-FWC16 Brazil 2002 - FIFA Museum FOIL
-FWC17 Italy 2006 - FIFA Museum FOIL
-FWC18 Germany 2014 - FIFA Museum FOIL
-FWC19 Argentina 2022 - FIFA Museum FOIL
+FWC9 Team Photo (Italia 1934) FOIL
+FWC10 Team Photo (Uruguay 1950) FOIL
+FWC11 Team Photo (Alemania Occ. 1954) FOIL
+FWC12 Team Photo (Brasil 1962) FOIL
+FWC13 Team Photo (Alemania Occ. 1974) FOIL
+FWC14 Team Photo (Argentina 1986) FOIL
+FWC15 Team Photo (Brasil 1994) FOIL
+FWC16 Team Photo (Brasil 2002) FOIL
+FWC17 Team Photo (Italia 2006) FOIL
+FWC18 Team Photo (Alemania 2014) FOIL
+FWC19 Team Photo (Argentina 2022) FOIL
 CC1 Lamine Yamal - Spain
 CC2 Joshua Kimmich - Germany
 CC3 Harry Kane - England

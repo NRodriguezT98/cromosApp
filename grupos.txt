@@ -4,7 +4,7 @@
 - Mexico
 - South Africa
 - South Korea
-- Czech Republic
+- Czechia
 
 ## Group B
 - Canada
@@ -19,7 +19,7 @@
 - Scotland
 
 ## Group D
-- United States
+- USA
 - Paraguay
 - Australia
 - Türkiye
@@ -62,7 +62,7 @@
 
 ## Group K
 - Portugal
-- DR Congo
+- Congo DR
 - Uzbekistan
 - Colombia
 

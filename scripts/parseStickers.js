@@ -64,6 +64,7 @@ const sectionIso = {
   NOR: 'no', ARG: 'ar', ALG: 'dz', AUT: 'at', JOR: 'jo',
   POR: 'pt', COD: 'cd', UZB: 'uz', COL: 'co', ENG: 'gb-eng',
   CRO: 'hr', GHA: 'gh', PAN: 'pa', FWC: null, CC: null,
+  WAP: null, HCC: null, FWH: null,
 };
 
 function parseLine(line, albumNumber) {
@@ -107,6 +108,7 @@ function parseLine(line, albumNumber) {
     .replace('Official Mascots', 'Mascotas Oficiales')
     .replace('Official Slogan', 'Eslogan Oficial')
     .replace('Official Ball', 'Balón Oficial')
+    .replace('Host Country Emblem', 'Emblema País Sede')
     .replace('Host Countries & Cities', 'Países y Ciudades Sede')
     .replace('FIFA Museum', 'Museo FIFA');
 
@@ -124,15 +126,37 @@ function parseLine(line, albumNumber) {
   // Handle the "00" code for Panini logo
   const numPart = code === '00' ? 0 : parseInt(code.replace(/[A-Z]+/, ''), 10);
 
-  const teamCode = section === 'FWC' ? 'FWC' : section;
+  // Special sub-sectioning for FWC/00 stickers
+  let teamCode;
+  if (code === '00') {
+    teamCode = 'WAP';
+  } else if (section === 'FWC') {
+    const num = parseInt(code.replace('FWC', ''), 10);
+    if (num <= 5)       teamCode = 'FWC';
+    else if (num <= 8)  teamCode = 'HCC';
+    else                teamCode = 'FWH';
+  } else if (section === 'CC') {
+    teamCode = 'CC';
+  } else {
+    teamCode = section;
+  }
+
+  const specialTeamName =
+    teamCode === 'WAP' ? 'We Are Panini'
+  : teamCode === 'FWC' ? 'FIFA World Cup 2026'
+  : teamCode === 'HCC' ? 'Países y Ciudades Anfitrionas'
+  : teamCode === 'FWH' ? 'Historia del Mundial FIFA'
+  : teamCode === 'CC'  ? 'Coca-Cola'
+  : null;
+
   return {
     albumNumber,
     code,
     section,
     name,
     teamCode,
-    teamName: section === 'CC' ? 'Coca-Cola' : (teamNameEs || (section === 'FWC' ? 'FIFA World Cup 2026' : section)),
-    isoCode: sectionIso[teamCode] || null,
+    teamName: specialTeamName || teamNameEs || section,
+    isoCode: sectionIso[teamCode] ?? null,
     type,
     foil,
     quantity: 0,
@@ -144,15 +168,37 @@ const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
 
 const stickers = lines.map((line, i) => parseLine(line, i + 1)).filter(Boolean);
 
+// ── Parse grupos.txt to build teamName → group letter map ──────────────────
+const gruposRaw = fs.readFileSync(path.join(__dirname, '..', 'grupos.txt'), 'utf8');
+const groupMap = {}; // teamName (English) → group letter, e.g. "Mexico" → "A"
+let currentGroup = null;
+for (const line of gruposRaw.split('\n')) {
+  const t = line.trim();
+  const groupMatch = t.match(/^##\s+Group\s+([A-Z])/i);
+  if (groupMatch) { currentGroup = groupMatch[1].toUpperCase(); continue; }
+  const teamMatch = t.match(/^-\s+(.+)/);
+  if (teamMatch && currentGroup) groupMap[teamMatch[1].trim()] = currentGroup;
+}
+
+// Build a reverse map: Spanish teamName → group, using countryMap
+const groupMapEs = {};
+for (const [enName, group] of Object.entries(groupMap)) {
+  groupMapEs[enName] = group;                        // keep English key
+  const esName = countryMap[enName];
+  if (esName) groupMapEs[esName] = group;           // add Spanish key
+}
+
 // Build sections summary
 const sectionsMap = {};
 for (const s of stickers) {
   if (!sectionsMap[s.teamCode]) {
+    const group = groupMapEs[s.teamName] || null;
     sectionsMap[s.teamCode] = {
       code: s.teamCode,
       name: s.teamName,
       isoCode: s.isoCode,
       total: 0,
+      group,
     };
   }
   sectionsMap[s.teamCode].total++;
@@ -165,4 +211,5 @@ const outPath = path.join(__dirname, '..', 'constants', 'stickersData.json');
 fs.writeFileSync(outPath, JSON.stringify(output, null, 2), 'utf8');
 
 console.log(`✅ Generados ${stickers.length} cromos en ${sections.length} secciones`);
-sections.forEach(s => console.log(`  [${s.isoCode || 'FIFA'}] ${s.code}: ${s.name} (${s.total} cromos)`));
+sections.forEach(s => console.log(`  [${s.isoCode || 'FIFA'}] ${s.code}: ${s.name} (${s.total} cromos)${s.group ? ' — Grupo ' + s.group : ''}`));
+

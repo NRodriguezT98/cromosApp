@@ -5,8 +5,8 @@
       "code": "00",
       "section": "FWC",
       "name": "Panini Logo",
-      "teamCode": "FWC",
-      "teamName": "FIFA World Cup 2026",
+      "teamCode": "WAP",
+      "teamName": "We Are Panini",
       "isoCode": null,
       "type": "special",
       "foil": true,
@@ -16,7 +16,7 @@
       "albumNumber": 2,
       "code": "FWC1",
       "section": "FWC",
-      "name": "Emblema Oficial",
+      "name": "Emblema Oficial 1/2",
       "teamCode": "FWC",
       "teamName": "FIFA World Cup 2026",
       "isoCode": null,
@@ -28,7 +28,7 @@
       "albumNumber": 3,
       "code": "FWC2",
       "section": "FWC",
-      "name": "Emblema Oficial",
+      "name": "Emblema Oficial 2/2",
       "teamCode": "FWC",
       "teamName": "FIFA World Cup 2026",
       "isoCode": null,
@@ -77,8 +77,8 @@
       "code": "FWC6",
       "section": "FWC",
       "name": "Canada",
-      "teamCode": "FWC",
-      "teamName": "Host Countries & Cities",
+      "teamCode": "HCC",
+      "teamName": "Países y Ciudades Anfitrionas",
       "isoCode": null,
       "type": "special",
       "foil": true,
@@ -89,8 +89,8 @@
       "code": "FWC7",
       "section": "FWC",
       "name": "Mexico",
-      "teamCode": "FWC",
-      "teamName": "Host Countries & Cities",
+      "teamCode": "HCC",
+      "teamName": "Países y Ciudades Anfitrionas",
       "isoCode": null,
       "type": "special",
       "foil": true,
@@ -101,8 +101,8 @@
       "code": "FWC8",
       "section": "FWC",
       "name": "USA",
-      "teamCode": "FWC",
-      "teamName": "Host Countries & Cities",
+      "teamCode": "HCC",
+      "teamName": "Países y Ciudades Anfitrionas",
       "isoCode": null,
       "type": "special",
       "foil": true,
@@ -11632,11 +11632,11 @@
       "albumNumber": 970,
       "code": "FWC9",
       "section": "FWC",
-      "name": "Italy 1934",
-      "teamCode": "FWC",
-      "teamName": "FIFA Museum",
+      "name": "Foto del Equipo (Italia 1934)",
+      "teamCode": "FWH",
+      "teamName": "Historia del Mundial FIFA",
       "isoCode": null,
-      "type": "special",
+      "type": "team_photo",
       "foil": true,
       "quantity": 0
     },
@@ -11644,11 +11644,11 @@
       "albumNumber": 971,
       "code": "FWC10",
       "section": "FWC",
-      "name": "Uruguay 1950",
-      "teamCode": "FWC",
-      "teamName": "FIFA Museum",
+      "name": "Foto del Equipo (Uruguay 1950)",
+      "teamCode": "FWH",
+      "teamName": "Historia del Mundial FIFA",
       "isoCode": null,
-      "type": "special",
+      "type": "team_photo",
       "foil": true,
       "quantity": 0
     },
@@ -11656,11 +11656,11 @@
       "albumNumber": 972,
       "code": "FWC11",
       "section": "FWC",
-      "name": "West Germany 1954",
-      "teamCode": "FWC",
-      "teamName": "FIFA Museum",
+      "name": "Foto del Equipo (Alemania Occ. 1954)",
+      "teamCode": "FWH",
+      "teamName": "Historia del Mundial FIFA",
       "isoCode": null,
-      "type": "special",
+      "type": "team_photo",
       "foil": true,
       "quantity": 0
     },
@@ -11668,11 +11668,11 @@
       "albumNumber": 973,
       "code": "FWC12",
       "section": "FWC",
-      "name": "Brazil 1962",
-      "teamCode": "FWC",
-      "teamName": "FIFA Museum",
+      "name": "Foto del Equipo (Brasil 1962)",
+      "teamCode": "FWH",
+      "teamName": "Historia del Mundial FIFA",
       "isoCode": null,
-      "type": "special",
+      "type": "team_photo",
       "foil": true,
       "quantity": 0
     },
@@ -11680,11 +11680,11 @@
       "albumNumber": 974,
       "code": "FWC13",
       "section": "FWC",
-      "name": "West Germany 1974",
-      "teamCode": "FWC",
-      "teamName": "FIFA Museum",
+      "name": "Foto del Equipo (Alemania Occ. 1974)",
+      "teamCode": "FWH",
+      "teamName": "Historia del Mundial FIFA",
       "isoCode": null,
-      "type": "special",
+      "type": "team_photo",
       "foil": true,
       "quantity": 0
     },
@@ -11692,11 +11692,11 @@
       "albumNumber": 975,
       "code": "FWC14",
       "section": "FWC",
-      "name": "Argentina 1986",
-      "teamCode": "FWC",
-      "teamName": "FIFA Museum",
+      "name": "Foto del Equipo (Argentina 1986)",
+      "teamCode": "FWH",
+      "teamName": "Historia del Mundial FIFA",
       "isoCode": null,
-      "type": "special",
+      "type": "team_photo",
       "foil": true,
       "quantity": 0
     },
@@ -11704,11 +11704,11 @@
       "albumNumber": 976,
       "code": "FWC15",
       "section": "FWC",
-      "name": "Brazil 1994",
-      "teamCode": "FWC",
-      "teamName": "FIFA Museum",
+      "name": "Foto del Equipo (Brasil 1994)",
+      "teamCode": "FWH",
+      "teamName": "Historia del Mundial FIFA",
       "isoCode": null,
-      "type": "special",
+      "type": "team_photo",
       "foil": true,
       "quantity": 0
     },
@@ -11716,11 +11716,11 @@
       "albumNumber": 977,
       "code": "FWC16",
       "section": "FWC",
-      "name": "Brazil 2002",
-      "teamCode": "FWC",
-      "teamName": "FIFA Museum",
+      "name": "Foto del Equipo (Brasil 2002)",
+      "teamCode": "FWH",
+      "teamName": "Historia del Mundial FIFA",
       "isoCode": null,
-      "type": "special",
+      "type": "team_photo",
       "foil": true,
       "quantity": 0
     },
@@ -11728,11 +11728,11 @@
       "albumNumber": 978,
       "code": "FWC17",
       "section": "FWC",
-      "name": "Italy 2006",
-      "teamCode": "FWC",
-      "teamName": "FIFA Museum",
+      "name": "Foto del Equipo (Italia 2006)",
+      "teamCode": "FWH",
+      "teamName": "Historia del Mundial FIFA",
       "isoCode": null,
-      "type": "special",
+      "type": "team_photo",
       "foil": true,
       "quantity": 0
     },
@@ -11740,11 +11740,11 @@
       "albumNumber": 979,
       "code": "FWC18",
       "section": "FWC",
-      "name": "Germany 2014",
-      "teamCode": "FWC",
-      "teamName": "FIFA Museum",
+      "name": "Foto del Equipo (Alemania 2014)",
+      "teamCode": "FWH",
+      "teamName": "Historia del Mundial FIFA",
       "isoCode": null,
-      "type": "special",
+      "type": "team_photo",
       "foil": true,
       "quantity": 0
     },
@@ -11752,11 +11752,11 @@
       "albumNumber": 980,
       "code": "FWC19",
       "section": "FWC",
-      "name": "Argentina 2022",
-      "teamCode": "FWC",
-      "teamName": "FIFA Museum",
+      "name": "Foto del Equipo (Argentina 2022)",
+      "teamCode": "FWH",
+      "teamName": "Historia del Mundial FIFA",
       "isoCode": null,
-      "type": "special",
+      "type": "team_photo",
       "foil": true,
       "quantity": 0
     },
@@ -11931,304 +11931,375 @@
   ],
   "sections": [
     {
+      "code": "WAP",
+      "name": "We Are Panini",
+      "isoCode": null,
+      "total": 1,
+      "group": null
+    },
+    {
       "code": "FWC",
       "name": "FIFA World Cup 2026",
       "isoCode": null,
-      "total": 20
+      "total": 5,
+      "group": null
+    },
+    {
+      "code": "HCC",
+      "name": "Países y Ciudades Anfitrionas",
+      "isoCode": null,
+      "total": 3,
+      "group": null
     },
     {
       "code": "MEX",
       "name": "México",
       "isoCode": "mx",
-      "total": 20
+      "total": 20,
+      "group": "A"
     },
     {
       "code": "RSA",
       "name": "Sudáfrica",
       "isoCode": "za",
-      "total": 20
+      "total": 20,
+      "group": "A"
     },
     {
       "code": "KOR",
       "name": "Corea del Sur",
       "isoCode": "kr",
-      "total": 20
+      "total": 20,
+      "group": "A"
     },
     {
       "code": "CZE",
       "name": "República Checa",
       "isoCode": "cz",
-      "total": 20
+      "total": 20,
+      "group": "A"
     },
     {
       "code": "CAN",
       "name": "Canadá",
       "isoCode": "ca",
-      "total": 20
+      "total": 20,
+      "group": "B"
     },
     {
       "code": "BIH",
       "name": "Bosnia y Herzegovina",
       "isoCode": "ba",
-      "total": 20
+      "total": 20,
+      "group": "B"
     },
     {
       "code": "QAT",
       "name": "Catar",
       "isoCode": "qa",
-      "total": 20
+      "total": 20,
+      "group": "B"
     },
     {
       "code": "SUI",
       "name": "Suiza",
       "isoCode": "ch",
-      "total": 20
+      "total": 20,
+      "group": "B"
     },
     {
       "code": "BRA",
       "name": "Brasil",
       "isoCode": "br",
-      "total": 20
+      "total": 20,
+      "group": "C"
     },
     {
       "code": "MAR",
       "name": "Marruecos",
       "isoCode": "ma",
-      "total": 20
+      "total": 20,
+      "group": "C"
     },
     {
       "code": "HAI",
       "name": "Haití",
       "isoCode": "ht",
-      "total": 20
+      "total": 20,
+      "group": "C"
     },
     {
       "code": "SCO",
       "name": "Escocia",
       "isoCode": "gb-sct",
-      "total": 20
+      "total": 20,
+      "group": "C"
     },
     {
       "code": "USA",
       "name": "EE.UU.",
       "isoCode": "us",
-      "total": 20
+      "total": 20,
+      "group": "D"
     },
     {
       "code": "PAR",
       "name": "Paraguay",
       "isoCode": "py",
-      "total": 20
+      "total": 20,
+      "group": "D"
     },
     {
       "code": "AUS",
       "name": "Australia",
       "isoCode": "au",
-      "total": 20
+      "total": 20,
+      "group": "D"
     },
     {
       "code": "TUR",
       "name": "Turquía",
       "isoCode": "tr",
-      "total": 20
+      "total": 20,
+      "group": "D"
     },
     {
       "code": "GER",
       "name": "Alemania",
       "isoCode": "de",
-      "total": 20
+      "total": 20,
+      "group": "E"
     },
     {
       "code": "CUW",
       "name": "Curazao",
       "isoCode": "cw",
-      "total": 20
+      "total": 20,
+      "group": "E"
     },
     {
       "code": "CIV",
       "name": "Costa de Marfil",
       "isoCode": "ci",
-      "total": 20
+      "total": 20,
+      "group": "E"
     },
     {
       "code": "ECU",
       "name": "Ecuador",
       "isoCode": "ec",
-      "total": 20
+      "total": 20,
+      "group": "E"
     },
     {
       "code": "NED",
       "name": "Países Bajos",
       "isoCode": "nl",
-      "total": 20
+      "total": 20,
+      "group": "F"
     },
     {
       "code": "JPN",
       "name": "Japón",
       "isoCode": "jp",
-      "total": 20
+      "total": 20,
+      "group": "F"
     },
     {
       "code": "SWE",
       "name": "Suecia",
       "isoCode": "se",
-      "total": 20
+      "total": 20,
+      "group": "F"
     },
     {
       "code": "TUN",
       "name": "Túnez",
       "isoCode": "tn",
-      "total": 20
+      "total": 20,
+      "group": "F"
     },
     {
       "code": "BEL",
       "name": "Bélgica",
       "isoCode": "be",
-      "total": 20
+      "total": 20,
+      "group": "G"
     },
     {
       "code": "EGY",
       "name": "Egipto",
       "isoCode": "eg",
-      "total": 20
+      "total": 20,
+      "group": "G"
     },
     {
       "code": "IRN",
       "name": "Irán",
       "isoCode": "ir",
-      "total": 20
+      "total": 20,
+      "group": "G"
     },
     {
       "code": "NZL",
       "name": "Nueva Zelanda",
       "isoCode": "nz",
-      "total": 20
+      "total": 20,
+      "group": "G"
     },
     {
       "code": "ESP",
       "name": "España",
       "isoCode": "es",
-      "total": 20
+      "total": 20,
+      "group": "H"
     },
     {
       "code": "CPV",
       "name": "Cabo Verde",
       "isoCode": "cv",
-      "total": 20
+      "total": 20,
+      "group": "H"
     },
     {
       "code": "KSA",
       "name": "Arabia Saudita",
       "isoCode": "sa",
-      "total": 20
+      "total": 20,
+      "group": "H"
     },
     {
       "code": "URU",
       "name": "Uruguay",
       "isoCode": "uy",
-      "total": 20
+      "total": 20,
+      "group": "H"
     },
     {
       "code": "FRA",
       "name": "Francia",
       "isoCode": "fr",
-      "total": 20
+      "total": 20,
+      "group": "I"
     },
     {
       "code": "SEN",
       "name": "Senegal",
       "isoCode": "sn",
-      "total": 20
+      "total": 20,
+      "group": "I"
     },
     {
       "code": "IRQ",
       "name": "Irak",
       "isoCode": "iq",
-      "total": 20
+      "total": 20,
+      "group": "I"
     },
     {
       "code": "NOR",
       "name": "Noruega",
       "isoCode": "no",
-      "total": 20
+      "total": 20,
+      "group": "I"
     },
     {
       "code": "ARG",
       "name": "Argentina",
       "isoCode": "ar",
-      "total": 20
+      "total": 20,
+      "group": "J"
     },
     {
       "code": "ALG",
       "name": "Argelia",
       "isoCode": "dz",
-      "total": 20
+      "total": 20,
+      "group": "J"
     },
     {
       "code": "AUT",
       "name": "Austria",
       "isoCode": "at",
-      "total": 20
+      "total": 20,
+      "group": "J"
     },
     {
       "code": "JOR",
       "name": "Jordania",
       "isoCode": "jo",
-      "total": 20
+      "total": 20,
+      "group": "J"
     },
     {
       "code": "POR",
       "name": "Portugal",
       "isoCode": "pt",
-      "total": 20
+      "total": 20,
+      "group": "K"
     },
     {
       "code": "COD",
       "name": "Rep. Dem. del Congo",
       "isoCode": "cd",
-      "total": 20
+      "total": 20,
+      "group": "K"
     },
     {
       "code": "UZB",
       "name": "Uzbekistán",
       "isoCode": "uz",
-      "total": 20
+      "total": 20,
+      "group": "K"
     },
     {
       "code": "COL",
       "name": "Colombia",
       "isoCode": "co",
-      "total": 20
+      "total": 20,
+      "group": "K"
     },
     {
       "code": "ENG",
       "name": "Inglaterra",
       "isoCode": "gb-eng",
-      "total": 20
+      "total": 20,
+      "group": "L"
     },
     {
       "code": "CRO",
       "name": "Croacia",
       "isoCode": "hr",
-      "total": 20
+      "total": 20,
+      "group": "L"
     },
     {
       "code": "GHA",
       "name": "Ghana",
       "isoCode": "gh",
-      "total": 20
+      "total": 20,
+      "group": "L"
     },
     {
       "code": "PAN",
       "name": "Panamá",
       "isoCode": "pa",
-      "total": 20
+      "total": 20,
+      "group": "L"
+    },
+    {
+      "code": "FWH",
+      "name": "Historia del Mundial FIFA",
+      "isoCode": null,
+      "total": 11,
+      "group": null
     },
     {
       "code": "CC",
       "name": "Coca-Cola",
       "isoCode": null,
-      "total": 14
+      "total": 14,
+      "group": null
     }
   ]
 }

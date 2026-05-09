@@ -7,7 +7,7 @@ import { Colors, Typography, Spacing, Radii } from '@/constants/theme';
 import { useStickers } from '@/context/StickersContext';
 import {
   Trophy, XCircle, ArrowsClockwise, Star, Camera, ShareNetwork,
-  ClockCounterClockwise, Plus, Minus, Sparkle,
+  ClockCounterClockwise, Plus, Minus, Sparkle, CopySimple,
 } from 'phosphor-react-native';
 import { FlagImage } from '@/components/ui/FlagImage';
 import { ScannerModal } from '@/components/ui/ScannerModal';
@@ -356,12 +356,35 @@ export default function HomeScreen() {
                       </Text>
                       <Text style={[Typography.bodyS, { color: Colors.textMuted }]} numberOfLines={1}>{entry.teamName}</Text>
                     </View>
-                    <View style={{ alignItems: 'flex-end', gap: 2 }}>
-                      <Text style={[Typography.labelS, { color: isAdd ? Colors.owned : Colors.red }]}>
-                        {isAdd
-                          ? entry.qty === 1 ? 'nuevo' : `${entry.qty - 1} rep.`
-                          : entry.qty === 0 ? 'eliminado' : entry.qty === 1 ? 'sin rep.' : `${entry.qty - 1} rep.`}
-                      </Text>
+                    <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                      {/* Estado del cromo */}
+                      {isAdd && entry.qty === 1 && (
+                        <View style={styles.badgeNew}>
+                          <Text style={styles.badgeNewText}>nuevo</Text>
+                        </View>
+                      )}
+                      {isAdd && entry.qty > 1 && (
+                        <View style={styles.badgeDup}>
+                          <CopySimple size={10} color={Colors.duplicate} weight="fill" />
+                          <Text style={styles.badgeDupText}>{entry.qty - 1} {entry.qty - 1 === 1 ? 'repetido' : 'repetidos'}</Text>
+                        </View>
+                      )}
+                      {!isAdd && entry.qty === 0 && (
+                        <View style={styles.badgeRemoved}>
+                          <Text style={styles.badgeRemovedText}>eliminado</Text>
+                        </View>
+                      )}
+                      {!isAdd && entry.qty === 1 && (
+                        <View style={styles.badgeNew}>
+                          <Text style={styles.badgeNewText}>×1</Text>
+                        </View>
+                      )}
+                      {!isAdd && entry.qty > 1 && (
+                        <View style={styles.badgeDup}>
+                          <CopySimple size={10} color={Colors.duplicate} weight="fill" />
+                          <Text style={styles.badgeDupText}>{entry.qty - 1} {entry.qty - 1 === 1 ? 'repetido' : 'repetidos'}</Text>
+                        </View>
+                      )}
                       <Text style={[Typography.bodyS, { color: Colors.textMuted }]}>{timeAgo(entry.timestamp)}</Text>
                     </View>
                   </View>
@@ -448,6 +471,36 @@ const styles = StyleSheet.create({
   miniBar:       { height: 3, backgroundColor: Colors.bgCardAlt, borderRadius: 2, marginTop: 5, overflow: 'hidden' },
   miniBarFill:   { height: 3, borderRadius: 2 },
   activityIcon:  { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+
+  /* Activity badges */
+  badgeNew: {
+    backgroundColor: Colors.owned + '20',
+    borderWidth: 1, borderColor: Colors.owned + '50',
+    paddingHorizontal: 7, paddingVertical: 2,
+    borderRadius: Radii.full,
+  },
+  badgeNewText: {
+    fontFamily: 'DMSans_700Bold', fontSize: 10, color: Colors.owned,
+  },
+  badgeDup: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    backgroundColor: Colors.duplicate + '22',
+    borderWidth: 1, borderColor: Colors.duplicate + '55',
+    paddingHorizontal: 7, paddingVertical: 2,
+    borderRadius: Radii.full,
+  },
+  badgeDupText: {
+    fontFamily: 'DMSans_700Bold', fontSize: 10, color: Colors.duplicate,
+  },
+  badgeRemoved: {
+    backgroundColor: Colors.red + '20',
+    borderWidth: 1, borderColor: Colors.red + '50',
+    paddingHorizontal: 7, paddingVertical: 2,
+    borderRadius: Radii.full,
+  },
+  badgeRemovedText: {
+    fontFamily: 'DMSans_700Bold', fontSize: 10, color: Colors.red,
+  },
   fab: {
     position: 'absolute', bottom: 90, alignSelf: 'center',
     flexDirection: 'row', alignItems: 'center',
