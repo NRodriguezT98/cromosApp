@@ -10,7 +10,6 @@ import {
   ClockCounterClockwise, Plus, Minus, Sparkle, CopySimple,
 } from 'phosphor-react-native';
 import { FlagImage } from '@/components/ui/FlagImage';
-import { ScannerModal } from '@/components/ui/ScannerModal';
 
 // ── Mini progress ring (SVG, 56px) ─────────────────────────────────────────
 function MiniRing({ pct }: { pct: number }) {
@@ -149,7 +148,6 @@ export default function HomeScreen() {
   } = useStickers();
   const stats  = getStats();
   const router = useRouter();
-  const [scannerOpen, setScannerOpen] = useState(false);
 
   // Foil stats
   const foilTotal = stickers.filter(s => s.foil).length;
@@ -397,16 +395,6 @@ export default function HomeScreen() {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* FAB */}
-      <Pressable
-        style={({ pressed }) => [styles.fab, pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] }]}
-        onPress={() => setScannerOpen(true)}
-      >
-        <Camera size={20} color={Colors.textPrimary} weight="fill" />
-        <Text style={styles.fabLabel}>Escanear Sobre</Text>
-      </Pressable>
-
-      <ScannerModal visible={scannerOpen} onClose={() => setScannerOpen(false)} />
     </View>
   );
 }
@@ -501,11 +489,4 @@ const styles = StyleSheet.create({
   badgeRemovedText: {
     fontFamily: 'DMSans_700Bold', fontSize: 10, color: Colors.red,
   },
-  fab: {
-    position: 'absolute', bottom: 90, alignSelf: 'center',
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.red, paddingHorizontal: 22, paddingVertical: 13,
-    borderRadius: Radii.full, gap: 8, elevation: 8,
-  },
-  fabLabel: { fontFamily: 'DMSans_700Bold', fontSize: 14, color: Colors.textPrimary, letterSpacing: 0.3 },
 });

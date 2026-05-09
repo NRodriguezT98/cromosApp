@@ -8,9 +8,8 @@ import { Colors, Typography, Spacing, Radii } from '@/constants/theme';
 import { useStickers } from '@/context/StickersContext';
 import { StickerCell, ViewMode } from '@/components/ui/StickerCell';
 import { FlagImage } from '@/components/ui/FlagImage';
-import { ScannerModal } from '@/components/ui/ScannerModal';
 import {
-  SquaresFourIcon, ListIcon, GridFourIcon, RowsIcon, CameraIcon,
+  SquaresFourIcon, ListIcon, GridFourIcon, RowsIcon,
   ArrowsDownUpIcon, CaretDownIcon, CaretUpIcon, CheckIcon,
   MagnifyingGlassIcon, XIcon,
 } from 'phosphor-react-native';
@@ -393,18 +392,7 @@ export default function AlbumScreen() {
         />
       )}
 
-      {/* FAB */}
-      <Pressable
-        style={({ pressed }) => [styles.fab, pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] }]}
-        onPress={() => setScannerOpen(true)}
-      >
-        <CameraIcon size={20} color={Colors.textPrimary} weight="fill" />
-        <Text style={styles.fabLabel}>Escanear Sobre</Text>
-      </Pressable>
 
-      <ScannerModal visible={scannerOpen} onClose={() => setScannerOpen(false)} />
-
-      {/* Sort menu modal */}
       <Modal visible={sortMenuOpen} transparent animationType="fade" onRequestClose={() => setSortMenuOpen(false)}>
         <Pressable style={styles.sortOverlay} onPress={() => setSortMenuOpen(false)}>
           <Pressable style={styles.sortMenu} onPress={e => e.stopPropagation()}>
