@@ -63,8 +63,8 @@ export function StickerCell({ sticker, qty, mode, onTap, onLongPress }: StickerC
     : dup     ? Colors.duplicate + '1A'
     : Colors.owned + '1A';
 
-  const textColor = missing ? (sticker.foil ? Colors.gold : Colors.textMuted) : Colors.textPrimary;
-  const subColor  = missing ? Colors.textMuted : Colors.textSecondary;
+  const textColor = missing ? (sticker.foil ? Colors.gold : Colors.textSecondary) : Colors.textPrimary;
+  const subColor  = missing ? Colors.textSecondary : Colors.white + 'D9'; // 85% opacity for owned name
 
   // ── MODO LISTA ────────────────────────────────────────────────
   if (mode === 'list') {
@@ -301,28 +301,28 @@ const styles = StyleSheet.create({
 
   // ── Texto ─────────────────────────────────────────────────────
   codeTiny: {
-    fontFamily: 'DMSans_500Medium', fontSize: 8,
+    fontFamily: 'DMSans_700Bold', fontSize: 9,
     letterSpacing: 0.3, textAlign: 'center',
   },
   codeSmall: {
-    fontFamily: 'DMSans_500Medium', fontSize: 10,
+    fontFamily: 'DMSans_700Bold', fontSize: 12,
     letterSpacing: 0.5, textAlign: 'center',
   },
   codeMedium: {
-    fontFamily: 'Oswald_600SemiBold', fontSize: 13,
+    fontFamily: 'Oswald_600SemiBold', fontSize: 14,
     letterSpacing: 0.5, textAlign: 'center',
   },
   nameTiny: {
-    fontFamily: 'DMSans_400Regular', fontSize: 7,
-    textAlign: 'center', marginTop: 2, lineHeight: 9, paddingHorizontal: 1,
+    fontFamily: 'DMSans_500Medium', fontSize: 8,
+    textAlign: 'center', marginTop: 2, lineHeight: 10, paddingHorizontal: 1,
   },
   nameSmall: {
-    fontFamily: 'DMSans_400Regular', fontSize: 8,
-    textAlign: 'center', marginTop: 3, lineHeight: 10, paddingHorizontal: 2,
+    fontFamily: 'DMSans_500Medium', fontSize: 9,
+    textAlign: 'center', marginTop: 3, lineHeight: 11, paddingHorizontal: 2,
   },
   nameMedium: {
-    fontFamily: 'DMSans_400Regular', fontSize: 10,
-    textAlign: 'center', marginTop: 4, lineHeight: 13, paddingHorizontal: 2,
+    fontFamily: 'DMSans_500Medium', fontSize: 11,
+    textAlign: 'center', marginTop: 4, lineHeight: 14, paddingHorizontal: 2,
   },
 
   // ── Badges grid ───────────────────────────────────────────────
