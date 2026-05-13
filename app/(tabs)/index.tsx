@@ -7,9 +7,11 @@ import { Colors, Typography, Spacing, Radii } from '@/constants/theme';
 import { useStickers } from '@/context/StickersContext';
 import {
   Trophy, XCircle, ArrowsClockwise, Star, Camera, ShareNetwork,
-  ClockCounterClockwise, Plus, Minus, Sparkle, CopySimple,
+  ClockCounterClockwise, Plus, Minus, Sparkle, CopySimple, Gear,
 } from 'phosphor-react-native';
 import { FlagImage } from '@/components/ui/FlagImage';
+import { BackupModal } from '@/components/ui/BackupModal';
+import { SettingsModal } from '@/components/ui/SettingsModal';
 
 // ── Mini progress ring (SVG, 56px) ─────────────────────────────────────────
 function MiniRing({ pct }: { pct: number }) {
@@ -148,6 +150,8 @@ export default function HomeScreen() {
   } = useStickers();
   const stats  = getStats();
   const router = useRouter();
+  const [showBackup, setShowBackup] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Foil stats
   const foilTotal = stickers.filter(s => s.foil).length;
@@ -207,6 +211,13 @@ export default function HomeScreen() {
           <Text style={[Typography.displayM, { color: Colors.textPrimary, marginTop: 4, textAlign: 'center' }]}>
             Mi Álbum
           </Text>
+          <Pressable 
+            style={({ pressed }) => [styles.settingsBtn, pressed && { opacity: 0.7 }]} 
+            onPress={() => setShowSettings(true)}
+            hitSlop={8}
+          >
+            <Gear size={22} color={Colors.textSecondary} weight="bold" />
+          </Pressable>
         </LinearGradient>
 
         {/* ── RESUMEN ── */}
@@ -274,15 +285,25 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Share */}
+        {/* Action buttons row */}
         {stats.owned > 0 && (
-          <Pressable style={({ pressed }) => [styles.shareRow, pressed && { opacity: 0.7 }]} onPress={handleShareCambios}>
-            <ShareNetwork size={16} color={Colors.textSecondary} weight="bold" />
-            <Text style={[Typography.labelM, { color: Colors.textSecondary, marginLeft: 8 }]}>
-              Compartir lista BUSCO / OFREZCO
-            </Text>
-          </Pressable>
+          <View style={styles.actionRow}>
+            <Pressable
+              style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.7 }]}
+              onPress={handleShareCambios}
+            >
+              <ShareNetwork size={15} color={Colors.textSecondary} weight="bold" />
+              <Text style={styles.actionBtnText}>COMPARTIR BUSCO / OFREZCO</Text>
+            </Pressable>
+          </View>
         )}
+
+        <BackupModal visible={showBackup} onClose={() => setShowBackup(false)} />
+        <SettingsModal 
+          visible={showSettings} 
+          onClose={() => setShowSettings(false)} 
+          onOpenBackup={() => setShowBackup(true)}
+        />
 
         {/* Empty state */}
         {stats.owned === 0 && (
@@ -404,6 +425,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content:   { flexGrow: 1 },
   header:    { paddingTop: 56, paddingBottom: 20, paddingHorizontal: Spacing.xl, alignItems: 'center' },
+  settingsBtn: { position: 'absolute', top: 56, right: Spacing.xl },
 
   /* ── Resumen card ── */
   resumeCard: {
@@ -440,12 +462,18 @@ const styles = StyleSheet.create({
   },
 
   /* ── Rest ── */
-  shareRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+  actionRow: {
+    flexDirection: 'row', gap: 10,
     marginHorizontal: Spacing.lg, marginBottom: Spacing.lg,
-    paddingVertical: 10, paddingHorizontal: 18,
+  },
+  actionBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
+    paddingVertical: 12, paddingHorizontal: 14,
     borderRadius: Radii.full, borderWidth: 1,
     borderColor: Colors.border, backgroundColor: Colors.bgCard,
+  },
+  actionBtnText: {
+    fontFamily: 'DMSans_500Medium', fontSize: 13, color: Colors.textSecondary, letterSpacing: 0.5,
   },
   emptyState: { alignItems: 'center', paddingHorizontal: Spacing.xxl, paddingVertical: Spacing.xxxl },
   section:       { paddingHorizontal: Spacing.lg, marginBottom: Spacing.xxl },

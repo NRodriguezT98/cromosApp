@@ -12,11 +12,15 @@ LogBox.ignoreLogs([
 
 if (Platform.OS === 'web' && typeof console !== 'undefined') {
   const _warn = console.warn.bind(console);
-  console.warn = (...args: unknown[]) => {
-    const msg = typeof args[0] === 'string' ? args[0] : '';
-    if (msg.includes('pointerEvents') || msg.includes('aria-hidden')) return;
-    _warn(...args);
-  };
+  const _error = console.error.bind(console);
+  const SUPPRESSED = [
+    'pointerEvents', 'aria-hidden', 'shadow', 'boxShadow',
+    'transform-origin', 'transformOrigin', 'Invalid DOM property',
+  ];
+  const suppress = (msg: unknown) =>
+    typeof msg === 'string' && SUPPRESSED.some(s => msg.includes(s));
+  console.warn  = (...args: unknown[]) => { if (!suppress(args[0])) _warn(...args); };
+  console.error = (...args: unknown[]) => { if (!suppress(args[0])) _error(...args); };
 }
 import {
   useFonts,

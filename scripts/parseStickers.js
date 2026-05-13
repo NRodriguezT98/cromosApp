@@ -79,11 +79,6 @@ function parseLine(line, albumNumber) {
   let code = cleanLine.slice(0, spaceIdx);
   const rest = cleanLine.slice(spaceIdx + 1).trim();
 
-  // Normalize known typos in codes
-  if (code === 'SWI9') code = 'SUI9';
-  if (code === 'SWI20') code = 'SUI20';
-  if (code === 'KAS12') code = 'KSA12';
-
   // Extract section prefix (letters only)
   const sectionMatch = code.match(/^([A-Z]+)/);
   const section = sectionMatch ? sectionMatch[1] : 'FWC';

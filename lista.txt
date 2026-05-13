@@ -155,7 +155,7 @@ SUI5 Ricardo Rodriguez - Switzerland
 SUI6 Nico Elvedi - Switzerland
 SUI7 Aurèle Amenda - Switzerland
 SUI8 Silvan Widmer - Switzerland
-SWI9 Granit Xhaka - Switzerland
+SUI9 Granit Xhaka - Switzerland
 SUI10 Denis Zakaria - Switzerland
 SUI11 Remo Freuler - Switzerland
 SUI12 Fabian Rieder - Switzerland
@@ -166,7 +166,7 @@ SUI16 Michel Aebischer - Switzerland
 SUI17 Breel Embolo - Switzerland
 SUI18 Ruben Vargas - Switzerland
 SUI19 Dan Ndoye - Switzerland
-SWI20 Zeki Amdouni - Switzerland
+SUI20 Zeki Amdouni - Switzerland
 BRA1 Team Logo - Brazil FOIL
 BRA2 Alisson - Brazil
 BRA3 Bento - Brazil
@@ -618,7 +618,7 @@ KSA8 Hassan Altambakti - Saudi Arabia
 KSA9 Musab Aljuwayr - Saudi Arabia
 KSA10 Ziyad Aljohani - Saudi Arabia
 KSA11 Abdullah Alkhaibari - Saudi Arabia
-KAS12 Nasser Aldawsari - Saudi Arabia
+KSA12 Nasser Aldawsari - Saudi Arabia
 KSA13 Team Photo - Saudi Arabia
 KSA14 Saleh Abu Alshamat - Saudi Arabia
 KSA15 Marwan Alsahafi - Saudi Arabia

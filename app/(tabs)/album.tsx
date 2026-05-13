@@ -1,18 +1,20 @@
 import React, { useMemo, useState, useRef, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, SectionList, Pressable, ScrollView,
-  Modal, TextInput, FlatList, Keyboard,
+  View, Text, StyleSheet, Pressable, ScrollView,
+  Modal, TextInput, Keyboard,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 
 import { Colors, Typography, Spacing, Radii } from '@/constants/theme';
-import { useStickers } from '@/context/StickersContext';
+import { useStickers, Section, Sticker } from '@/context/StickersContext';
 import { StickerCell, ViewMode } from '@/components/ui/StickerCell';
 import { FlagImage } from '@/components/ui/FlagImage';
 import {
   SquaresFourIcon, ListIcon, GridFourIcon, RowsIcon,
   ArrowsDownUpIcon, CaretDownIcon, CaretUpIcon, CheckIcon,
-  MagnifyingGlassIcon, XIcon,
+  MagnifyingGlassIcon, XIcon, ShareNetworkIcon,
 } from 'phosphor-react-native';
+import { ExportModal } from '@/components/ui/ExportModal';
 
 const COLS: Record<ViewMode, number> = { tiny: 6, small: 4, medium: 3, list: 1 };
 
@@ -34,6 +36,10 @@ const SORT_OPTIONS: { key: SortMode; label: string; sub: string }[] = [
 ];
 
 const VIEW_OPTIONS: ViewMode[] = ['tiny', 'small', 'medium', 'list'];
+
+type AlbumFlatItem =
+  | { kind: 'header'; section: Section; count: number; pct: number; owned: number; isCollapsed: boolean }
+  | { kind: 'row'; stickers: Sticker[] };
 
 function ViewIcon({ mode, color }: { mode: ViewMode; color: string }) {
   const size = 15; const w = 'fill' as const;
@@ -59,7 +65,7 @@ export default function AlbumScreen() {
   const [sortMode, setSortMode]       = useState<SortMode>('original');
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [collapsed, setCollapsed]     = useState<Set<string>>(new Set());
-  const [scannerOpen, setScannerOpen] = useState(false);
+  const [exportVisible, setExportVisible] = useState(false);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -166,6 +172,15 @@ export default function AlbumScreen() {
     return map;
   }, [sections]);
 
+  const estimatedItemSize = mode === 'list' ? 60 : mode === 'tiny' ? 80 : mode === 'medium' ? 160 : 120;
+
+  const flatData = useMemo((): AlbumFlatItem[] => {
+    return sectionedData.flatMap(g => [
+      { kind: 'header' as const, section: g.section, count: g.count, pct: g.pct, owned: g.owned, isCollapsed: g.isCollapsed },
+      ...g.data.map(row => ({ kind: 'row' as const, stickers: row })),
+    ]);
+  }, [sectionedData]);
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -189,6 +204,14 @@ export default function AlbumScreen() {
               <Text style={[styles.sortBtnLabel, sortIsActive && { color: activeTab.color }]}>
                 {sortIsActive ? activeSortLabel : 'Ordenar'}
               </Text>
+            </Pressable>
+          )}
+          {(subTab === 'missing' || subTab === 'duplicates') && !isSearching && (
+            <Pressable
+              style={[styles.shareBtn, { backgroundColor: activeTab.color }]}
+              onPress={() => setExportVisible(true)}
+            >
+              <ShareNetworkIcon size={16} color={Colors.white} weight="bold" />
             </Pressable>
           )}
           {!isSearching && (
@@ -255,12 +278,13 @@ export default function AlbumScreen() {
 
       {/* === SEARCH RESULTS === */}
       {isSearching ? (
-        <FlatList
+        <FlashList
           data={searchResults}
+          estimatedItemSize={80}
           keyExtractor={s => s.code}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={[styles.list, { paddingTop: Spacing.sm }]}
+          contentContainerStyle={styles.list}
           ListEmptyComponent={
             <View style={styles.empty}>
               <Text style={[Typography.titleM, { color: Colors.textSecondary, textAlign: 'center' }]}>
@@ -275,7 +299,6 @@ export default function AlbumScreen() {
             const sec = sectionByCode[sticker.teamCode];
             return (
               <View style={styles.searchResultItem}>
-                {/* Section badge */}
                 <View style={styles.searchResultBadge}>
                   <FlagImage isoCode={sec?.isoCode ?? null} size={14} />
                   <Text style={styles.searchResultBadgeText}>{sticker.code}</Text>
@@ -295,66 +318,80 @@ export default function AlbumScreen() {
           ListFooterComponent={<View style={{ height: 120 }} />}
         />
       ) : (
-        /* === NORMAL SECTION LIST === */
-        <SectionList
-          sections={sectionedData}
-          keyExtractor={(row, i) => `r${i}-${row[0]?.code ?? i}`}
+        /* === MAIN ALBUM LIST === */
+        <FlashList
+          data={flatData}
+          estimatedItemSize={estimatedItemSize}
+          keyExtractor={(item, i) => item.kind === 'header' ? `h-${item.section.code}` : `r-${i}`}
           showsVerticalScrollIndicator={false}
-          stickySectionHeadersEnabled={false}
+          getItemType={item => item.kind}
           contentContainerStyle={styles.list}
-          renderSectionHeader={({ section: { section, count, pct, owned, isCollapsed } }) => {
-            const isComplete = pct === 100;
-            const pctColor   = isComplete ? Colors.owned : activeTab.color;
-            const showBar    = subTab === 'all';
-            return (
-              <Pressable style={styles.sectionHeader} onPress={() => toggleCollapse(section.code)}>
-                <FlagImage isoCode={section.isoCode} size={26} />
-
-                <View style={{ flex: 1, marginLeft: 10 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={[Typography.titleS, { color: Colors.textPrimary, flexShrink: 1 }]} numberOfLines={1}>
-                      {section.name}
-                    </Text>
-                    {section.group && (
-                      <View style={styles.groupBadge}>
-                        <Text style={styles.groupBadgeText}>Grupo {section.group}</Text>
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Text style={[Typography.titleM, { color: Colors.textSecondary, textAlign: 'center' }]}>
+                {subTab === 'owned'      ? 'Sin cromos aún'   :
+                 subTab === 'missing'   ? '¡Álbum completo!' :
+                 subTab === 'duplicates'? 'Sin repetidos'    : ''}
+              </Text>
+              <Text style={[Typography.bodyM, { color: Colors.textMuted, textAlign: 'center', marginTop: 8 }]}>
+                {subTab === 'owned'      ? 'Toca un cromo para marcarlo'  :
+                 subTab === 'missing'   ? 'No te falta ningún cromo'      :
+                 subTab === 'duplicates'? 'No tienes cromos repetidos'    : ''}
+              </Text>
+            </View>
+          }
+          ListFooterComponent={<View style={{ height: 100 }} />}
+          renderItem={({ item }) => {
+            if (item.kind === 'header') {
+              const { section, count, pct, owned, isCollapsed } = item;
+              const isComplete = pct === 100;
+              const pctColor   = isComplete ? Colors.owned : activeTab.color;
+              const showBar    = subTab === 'all';
+              return (
+                <Pressable style={styles.sectionHeader} onPress={() => toggleCollapse(section.code)}>
+                  <FlagImage isoCode={section.isoCode} size={26} />
+                  <View style={{ flex: 1, marginLeft: 10 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={[Typography.titleS, { color: Colors.textPrimary, flexShrink: 1 }]} numberOfLines={1}>
+                        {section.name}
+                      </Text>
+                      {section.group && (
+                        <View style={styles.groupBadge}>
+                          <Text style={styles.groupBadgeText}>Grupo {section.group}</Text>
+                        </View>
+                      )}
+                    </View>
+                    {showBar ? (
+                      <View style={styles.miniBarRow}>
+                        <View style={styles.miniBar}>
+                          <View style={[styles.miniBarFill, { width: `${pct}%`, backgroundColor: pctColor }]} />
+                        </View>
+                        <Text style={[Typography.labelS, { color: Colors.textMuted, marginLeft: 8 }]}>
+                          {owned}/{section.total}
+                        </Text>
                       </View>
+                    ) : (
+                      <Text style={[Typography.labelS, { color: Colors.textMuted, marginTop: 2 }]}>
+                        {count} cromo{count !== 1 ? 's' : ''}
+                      </Text>
                     )}
                   </View>
                   {showBar ? (
-                    <View style={styles.miniBarRow}>
-                      <View style={styles.miniBar}>
-                        <View style={[styles.miniBarFill, { width: `${pct}%`, backgroundColor: pctColor }]} />
-                      </View>
-                      <Text style={[Typography.labelS, { color: Colors.textMuted, marginLeft: 8 }]}>
-                        {owned}/{section.total}
-                      </Text>
-                    </View>
-                  ) : (
-                    <Text style={[Typography.labelS, { color: Colors.textMuted, marginTop: 2 }]}>
-                      {count} cromo{count !== 1 ? 's' : ''}
+                    <Text style={[Typography.labelM, { color: pctColor, marginHorizontal: 8, minWidth: 40, textAlign: 'right', fontFamily: 'Oswald_600SemiBold' }]}>
+                      {pct}%
                     </Text>
+                  ) : (
+                    <View style={[styles.countBadge, { backgroundColor: activeTab.color + '20', borderColor: activeTab.color + '40', marginHorizontal: 8 }]}>
+                      <Text style={[Typography.labelS, { color: activeTab.color }]}>{count}</Text>
+                    </View>
                   )}
-                </View>
-
-                {/* Percentage / count badge */}
-                {showBar ? (
-                  <Text style={[Typography.labelM, { color: pctColor, marginHorizontal: 8, minWidth: 40, textAlign: 'right', fontFamily: 'Oswald_600SemiBold' }]}>
-                    {pct}%
-                  </Text>
-                ) : (
-                  <View style={[styles.countBadge, { backgroundColor: activeTab.color + '20', borderColor: activeTab.color + '40', marginHorizontal: 8 }]}>
-                    <Text style={[Typography.labelS, { color: activeTab.color }]}>{count}</Text>
-                  </View>
-                )}
-
-                {isCollapsed
-                  ? <CaretUpIcon   size={14} color={Colors.textMuted} weight="bold" />
-                  : <CaretDownIcon size={14} color={Colors.textMuted} weight="bold" />}
-              </Pressable>
-            );
-          }}
-          renderItem={({ item: row }) => {
+                  {isCollapsed
+                    ? <CaretUpIcon   size={14} color={Colors.textMuted} weight="bold" />
+                    : <CaretDownIcon size={14} color={Colors.textMuted} weight="bold" />}
+                </Pressable>
+              );
+            }
+            const { stickers: row } = item;
             if (mode === 'list') {
               const sticker = row[0];
               return (
@@ -374,24 +411,15 @@ export default function AlbumScreen() {
               </View>
             );
           }}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Text style={[Typography.titleM, { color: Colors.textSecondary, textAlign: 'center' }]}>
-                {subTab === 'owned'      ? 'Sin cromos aún'   :
-                 subTab === 'missing'   ? '¡Álbum completo!' :
-                 subTab === 'duplicates'? 'Sin repetidos'    : ''}
-              </Text>
-              <Text style={[Typography.bodyM, { color: Colors.textMuted, textAlign: 'center', marginTop: 8 }]}>
-                {subTab === 'owned'      ? 'Toca un cromo para marcarlo'  :
-                 subTab === 'missing'   ? 'No te falta ningún cromo'      :
-                 subTab === 'duplicates'? 'No tienes cromos repetidos'    : ''}
-              </Text>
-            </View>
-          }
-          ListFooterComponent={<View style={{ height: 100 }} />}
         />
       )}
 
+
+      <ExportModal
+        visible={exportVisible}
+        onClose={() => setExportVisible(false)}
+        type={subTab === 'missing' ? 'missing' : 'duplicates'}
+      />
 
       <Modal visible={sortMenuOpen} transparent animationType="fade" onRequestClose={() => setSortMenuOpen(false)}>
         <Pressable style={styles.sortOverlay} onPress={() => setSortMenuOpen(false)}>
@@ -542,4 +570,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.border,
   },
   groupBadgeText: { fontFamily: 'DMSans_500Medium', fontSize: 10, color: Colors.textMuted },
+  shareBtn: {
+    width: 34, height: 34, borderRadius: 17,
+    alignItems: 'center', justifyContent: 'center',
+  },
 });

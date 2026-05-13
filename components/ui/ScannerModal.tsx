@@ -13,8 +13,118 @@ import {
   WarningCircleIcon,
 } from 'phosphor-react-native';
 
-// Matches "ARG 1", "ARG1", "ECU 3", "FWC4", etc.
-const CODE_RE = /\b([A-Z]{2,4})\s*(\d{1,2})\b/g;
+// ── OCR detection constants ────────────────────────────────────────────────
+const NUM_SHOTS = 3;        // photos per capture burst
+const SHOT_DELAY_MS = 450;  // ms between shots
+
+/** Normalize characters that ML-Kit commonly mis-reads in sticker codes */
+function normalizeOcrText(raw: string): string {
+  return raw
+    .toUpperCase()
+    .replace(/[|!]/g, 'I')   // pipe / exclamation → I
+    .replace(/\bl\b/g, 'I')  // lone lowercase-l → I
+    .replace(/\$/g, 'S');
+}
+
+/**
+ * Single-char substitution table.
+ * Key = what OCR produces → values = real chars to try.
+ */
+const CHAR_SUBS: Record<string, string[]> = {
+  'O': ['Q'],
+  'Q': ['O'],
+  '0': ['O', 'Q'],
+  '1': ['I'],
+  'I': ['1'],
+  'G': ['Q', 'C'],
+  'B': ['R'],
+};
+
+/** Try prefix+num directly, then with single-char substitutions in the prefix */
+function findStickerFuzzy(
+  prefix: string,
+  numStr: string,
+  stickerMap: Map<string, Sticker>,
+): Sticker | null {
+  const direct = stickerMap.get(prefix + numStr);
+  if (direct) return direct;
+  const chars = prefix.split('');
+  for (let i = 0; i < chars.length; i++) {
+    for (const alt of (CHAR_SUBS[chars[i]] ?? [])) {
+      const candidate = [...chars.slice(0, i), alt, ...chars.slice(i + 1)].join('') + numStr;
+      const s = stickerMap.get(candidate);
+      if (s) return s;
+    }
+  }
+  return null;
+}
+
+/**
+ * Full extraction pipeline:
+ *  Pass 1 – regex on normalized flat text
+ *  Pass 2 – word-pair scan (prefix/number split by OCR whitespace)
+ *  Pass 3 – ML Kit element scan (processes each individual OCR element
+ *           and consecutive element pairs within a line — most precise)
+ */
+function extractStickers(
+  ocrResult: { text: string; blocks?: Array<{
+    lines?: Array<{ elements?: Array<{ text: string }> }>
+  }> },
+  stickerMap: Map<string, Sticker>,
+): Sticker[] {
+  const found: Sticker[] = [];
+  const addIfNew = (s: Sticker) => { if (!found.some(f => f.code === s.code)) found.push(s); };
+
+  const text = normalizeOcrText(ocrResult.text);
+
+  // Pass 1: regex over full concatenated text (handles inline "QAT4" or "QAT 4")
+  const re = /\b([A-Z0-9]{2,4})\s{0,3}(\d{1,2})\b/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const s = findStickerFuzzy(m[1], m[2], stickerMap);
+    if (s) addIfNew(s);
+  }
+
+  // Pass 2: word-pair scan on the flat text
+  const words = text.split(/\s+/);
+  for (let i = 0; i < words.length - 1; i++) {
+    if (/^[A-Z0-9]{2,4}$/.test(words[i]) && /^\d{1,2}$/.test(words[i + 1])) {
+      const s = findStickerFuzzy(words[i], words[i + 1], stickerMap);
+      if (s) addIfNew(s);
+    }
+  }
+
+  // Pass 3: ML Kit element-level scan (most granular — catches codes that
+  // OCR places in separate bounding-box elements within a line)
+  if (ocrResult.blocks) {
+    for (const block of ocrResult.blocks) {
+      for (const line of (block.lines ?? [])) {
+        const elems = line.elements ?? [];
+        for (let i = 0; i < elems.length; i++) {
+          const eText = normalizeOcrText(elems[i].text);
+          // Full code in one element: "QAT4"
+          const full = /^([A-Z0-9]{2,4})(\d{1,2})$/.exec(eText);
+          if (full) {
+            const s = findStickerFuzzy(full[1], full[2], stickerMap);
+            if (s) { addIfNew(s); continue; }
+          }
+          // Prefix in this element, number in the next: ["QAT"] ["4"]
+          if (/^[A-Z0-9]{2,4}$/.test(eText) && i + 1 < elems.length) {
+            const nextText = normalizeOcrText(elems[i + 1].text);
+            if (/^\d{1,2}$/.test(nextText)) {
+              const s = findStickerFuzzy(eText, nextText, stickerMap);
+              if (s) addIfNew(s);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Remove codes that are a strict prefix of another found code.
+  // e.g. FWC1 gets dropped when FWC11 is also detected (OCR split "11" → "1"+"1").
+  return found.filter(s => !found.some(o => o.code !== s.code && o.code.startsWith(s.code)));
+}
 
 type Phase = 'camera' | 'review' | 'manual';
 type Candidate = { sticker: Sticker; selected: boolean };
@@ -33,6 +143,7 @@ export function ScannerModal({ visible, onClose }: Props) {
   const [noMatch, setNoMatch]       = useState(false);
   const [registered, setRegistered] = useState<Registered[]>([]);
   const [manualQuery, setManualQuery] = useState('');
+  const [shotProgress, setShotProgress] = useState(0); // 0=idle, 1-3=current shot
 
   // Toast
   const [toastMsg, setToastMsg]   = useState('');
@@ -63,38 +174,42 @@ export function ScannerModal({ visible, onClose }: Props) {
       .slice(0, 6);
   }, [manualQuery, stickers]);
 
-  // ── capture ────────────────────────────────────────────────────────────────
+  // ── capture (multi-shot burst) ────────────────────────────────────────────
   const handleCapture = useCallback(async () => {
     if (!cameraRef.current || capturing) return;
     setCapturing(true);
     setNoMatch(false);
+    setShotProgress(0);
+
+    const allFound: Sticker[] = [];
 
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.85, skipProcessing: true });
-      const result = await TextRecognition.recognize(photo.uri);
-
-      if (result?.text) {
-        const upper = result.text.toUpperCase();
-        const found: Sticker[] = [];
-        let m: RegExpExecArray | null;
-        CODE_RE.lastIndex = 0;
-        while ((m = CODE_RE.exec(upper)) !== null) {
-          const key = m[1] + m[2]; // e.g. "ARG" + "1" = "ARG1"
-          const s = stickerMap.get(key);
-          if (s && !found.some(f => f.code === s.code)) found.push(s);
+      for (let shot = 1; shot <= NUM_SHOTS; shot++) {
+        setShotProgress(shot);
+        const photo = await cameraRef.current.takePictureAsync({
+          quality: 0.92,
+          skipProcessing: false,
+          shutterSound: false,
+        });
+        const result = await TextRecognition.recognize(photo.uri);
+        if (result?.text) {
+          extractStickers(result, stickerMap).forEach(s => {
+            if (!allFound.some(f => f.code === s.code)) allFound.push(s);
+          });
         }
-        if (found.length > 0) {
-          setCandidates(found.map(s => ({ sticker: s, selected: true })));
-          setPhase('review');
-        } else {
-          setNoMatch(true);
+        if (shot < NUM_SHOTS) {
+          await new Promise<void>(resolve => setTimeout(resolve, SHOT_DELAY_MS));
         }
-      } else {
-        setNoMatch(true);
       }
-    } catch {
+    } catch { /* continúa con lo que haya encontrado */ }
+
+    if (allFound.length > 0) {
+      setCandidates(allFound.map(s => ({ sticker: s, selected: true })));
+      setPhase('review');
+    } else {
       setNoMatch(true);
     }
+    setShotProgress(0);
     setCapturing(false);
   }, [capturing, stickerMap]);
 
@@ -189,7 +304,7 @@ export function ScannerModal({ visible, onClose }: Props) {
       <View style={{ flex: 1, backgroundColor: '#000' }}>
 
         {/* Camera always in background */}
-        <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
+        <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" zoom={0.12} />
 
         {/* ── PHASE: camera ── */}
         {phase === 'camera' && (
@@ -214,17 +329,31 @@ export function ScannerModal({ visible, onClose }: Props) {
             </Text>
 
             <View style={styles.captureWrap}>
-              {capturing
-                ? <ActivityIndicator size="large" color={Colors.red} />
-                : (
-                  <Pressable
-                    style={({ pressed }) => [styles.captureBtn, pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] }]}
-                    onPress={handleCapture}
-                  >
-                    <View style={styles.captureBtnInner} />
-                  </Pressable>
-                )
-              }
+              {capturing ? (
+                <View style={styles.burstWrap}>
+                  <View style={styles.burstDots}>
+                    {[1, 2, 3].map(n => (
+                      <View
+                        key={n}
+                        style={[
+                          styles.burstDot,
+                          shotProgress >= n && styles.burstDotActive,
+                        ]}
+                      />
+                    ))}
+                  </View>
+                  <Text style={styles.burstLabel}>
+                    {shotProgress > 0 ? `Capturando ${shotProgress}/3…` : 'Preparando…'}
+                  </Text>
+                </View>
+              ) : (
+                <Pressable
+                  style={({ pressed }) => [styles.captureBtn, pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] }]}
+                  onPress={handleCapture}
+                >
+                  <View style={styles.captureBtnInner} />
+                </Pressable>
+              )}
             </View>
 
             {/* Manual entry shortcut — below capture button, centrado */}
@@ -242,10 +371,32 @@ export function ScannerModal({ visible, onClose }: Props) {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
             <View style={styles.resultSheet}>
-              <Text style={[Typography.labelM, { color: Colors.textMuted, letterSpacing: 2, textAlign: 'center', marginBottom: 4 }]}>
-                {candidates.length === 1 ? 'CROMO DETECTADO' : `${candidates.length} CROMOS DETECTADOS`}
+              {/* Drag handle */}
+              <View style={styles.sheetHandle} />
+
+              {/* Title */}
+              <Text style={[Typography.titleS, { color: Colors.textPrimary, textAlign: 'center', letterSpacing: 1.5, marginBottom: 6 }]}>
+                {candidates.length === 1 ? '1 CROMO DETECTADO' : `${candidates.length} CROMOS DETECTADOS`}
               </Text>
-              <Text style={[Typography.bodyS, { color: Colors.textMuted, textAlign: 'center', marginBottom: 14 }]}>
+
+              {/* Nuevos · Repetidos summary */}
+              {(() => {
+                const newCount = candidates.filter(c => (quantities[c.sticker.code] ?? 0) === 0).length;
+                const dupCount = candidates.length - newCount;
+                return (
+                  <View style={styles.detectionSummary}>
+                    <Text style={[Typography.labelM, { color: Colors.owned }]}>
+                      {newCount} Nuevo{newCount !== 1 ? 's' : ''}
+                    </Text>
+                    <Text style={[Typography.bodyS, { color: Colors.textMuted }]}> — </Text>
+                    <Text style={[Typography.labelM, { color: dupCount > 0 ? Colors.duplicate : Colors.textSecondary }]}>
+                      {dupCount} Repetido{dupCount !== 1 ? 's' : ''}
+                    </Text>
+                  </View>
+                );
+              })()}
+
+              <Text style={[Typography.bodyS, { color: Colors.textSecondary, textAlign: 'center', marginBottom: 14 }]}>
                 Selecciona los que quieras agregar
               </Text>
 
@@ -255,23 +406,32 @@ export function ScannerModal({ visible, onClose }: Props) {
                   return (
                     <Pressable
                       key={s.code}
-                      style={[styles.candidateRow, selected && styles.candidateRowSelected]}
+                      style={[
+                        styles.candidateRow,
+                        qty > 0 && styles.candidateRowDuplicate,
+                        selected && styles.candidateRowSelected,
+                      ]}
                       onPress={() => toggleCandidate(s.code)}
                     >
                       {selected
-                        ? <CheckSquareIcon size={22} color={Colors.owned} weight="fill" />
+                        ? <CheckSquareIcon size={22} color={qty > 0 ? Colors.duplicate : Colors.owned} weight="fill" />
                         : <SquareIcon size={22} color={Colors.textMuted} weight="regular" />
                       }
-                      <View style={[styles.candidateCode, s.foil && { borderColor: Colors.gold }]}>
-                        <Text style={[Typography.codeM, { color: s.foil ? Colors.gold : Colors.textSecondary }]}>{s.code}</Text>
+                      <View style={[styles.candidateCode, s.foil && { borderColor: Colors.gold }, qty > 0 && { borderColor: Colors.duplicate + '60' }]}>
+                        <Text style={[Typography.codeM, { color: s.foil ? Colors.gold : qty > 0 ? Colors.duplicate : Colors.textSecondary }]}>{s.code}</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={[Typography.labelL, { color: Colors.textPrimary }]} numberOfLines={1}>{s.name}</Text>
-                        <Text style={[Typography.bodyS, { color: Colors.textMuted }]}>
-                          {s.teamName}
-                          {s.foil ? '  ✦ FOIL' : ''}
-                          {qty > 0 ? `  ·  ya tienes ${qty}` : ''}
-                        </Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 4 }}>
+                          <Text style={[Typography.bodyS, { color: Colors.textSecondary }]}>
+                            {s.teamName}{s.foil ? '  ✦ FOIL' : ''}
+                          </Text>
+                          {qty > 0 && (
+                            <Text style={[Typography.bodyS, { color: Colors.duplicate, fontFamily: 'DMSans_500Medium' }]}>
+                              · ya tienes {qty} {qty === 1 ? 'repetido' : 'repetidos'}
+                            </Text>
+                          )}
+                        </View>
                       </View>
                     </Pressable>
                   );
@@ -290,12 +450,12 @@ export function ScannerModal({ visible, onClose }: Props) {
 
               <View style={styles.reviewActions}>
                 <Pressable style={styles.reviewActionBtn} onPress={() => { setCandidates([]); setPhase('camera'); }}>
-                  <ArrowCounterClockwiseIcon size={14} color={Colors.textMuted} />
-                  <Text style={[Typography.bodyS, { color: Colors.textMuted, marginLeft: 6 }]}>Volver a escanear</Text>
+                  <ArrowCounterClockwiseIcon size={14} color={Colors.textSecondary} />
+                  <Text style={[Typography.bodyS, { color: Colors.textSecondary, marginLeft: 6 }]}>Volver a escanear</Text>
                 </Pressable>
                 <Pressable style={styles.reviewActionBtn} onPress={() => setPhase('manual')}>
-                  <KeyboardIcon size={14} color={Colors.textMuted} />
-                  <Text style={[Typography.bodyS, { color: Colors.textMuted, marginLeft: 6 }]}>Agregar manualmente</Text>
+                  <KeyboardIcon size={14} color={Colors.textSecondary} />
+                  <Text style={[Typography.bodyS, { color: Colors.textSecondary, marginLeft: 6 }]}>Agregar manualmente</Text>
                 </Pressable>
               </View>
             </View>
@@ -466,7 +626,27 @@ const styles = StyleSheet.create({
 
   captureWrap: {
     position: 'absolute', bottom: 80, alignSelf: 'center',
-    width: 72, height: 72, alignItems: 'center', justifyContent: 'center',
+    width: 120, height: 72, alignItems: 'center', justifyContent: 'center',
+  },
+  burstWrap: {
+    alignItems: 'center', gap: 8,
+  },
+  burstDots: {
+    flexDirection: 'row', gap: 8,
+  },
+  burstDot: {
+    width: 12, height: 12, borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)',
+  },
+  burstDotActive: {
+    backgroundColor: Colors.red,
+    borderColor: Colors.red,
+  },
+  burstLabel: {
+    color: 'rgba(255,255,255,0.85)',
+    fontFamily: 'DMSans_500Medium',
+    fontSize: 12,
   },
   captureBtn: {
     width: 72, height: 72, borderRadius: 36,
@@ -499,9 +679,18 @@ const styles = StyleSheet.create({
   resultSheet: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: Colors.bgCard,
-    borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    padding: Spacing.lg, paddingBottom: 36,
-    borderTopWidth: 1, borderTopColor: Colors.border,
+    borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    padding: Spacing.lg, paddingTop: 12, paddingBottom: 36,
+    borderTopWidth: 1, borderTopColor: Colors.borderBright,
+  },
+  sheetHandle: {
+    width: 36, height: 4, borderRadius: 2,
+    backgroundColor: Colors.borderBright,
+    alignSelf: 'center', marginBottom: 14,
+  },
+  detectionSummary: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    marginBottom: 6,
   },
 
   candidateRow: {
@@ -511,6 +700,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.border,
   },
   candidateRowSelected: { borderColor: Colors.owned + '60', backgroundColor: Colors.owned + '08' },
+  candidateRowDuplicate: { borderColor: Colors.duplicate + '35', backgroundColor: Colors.duplicate + '06' },
   candidateCode: {
     paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radii.sm,
     borderWidth: 1, borderColor: Colors.border,

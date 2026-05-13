@@ -144,63 +144,6 @@ export function StickerCell({ sticker, qty, mode, onTap, onLongPress }: StickerC
     </>
   );
 
-  // ── Duplicados: efecto apilado ────────────────────────────────
-  if (dup) {
-    const mainRight  = stackOffset;
-    const mainBottom = stackOffset;
-
-    return (
-      <View style={[
-        styles.stackWrapper,
-        isTiny   && styles.stackWrapperTiny,
-        isMedium && styles.stackWrapperMedium,
-      ]}>
-        {/* Capa más lejana — solo si qty > 2 */}
-        {qty > 2 && (
-          <View style={[styles.stackLayerBase, {
-            top: stackOffset * 2, left: stackOffset * 2,
-            borderRadius: cardRadius,
-            borderWidth: 1,
-            borderColor: Colors.duplicate + '1F',
-            backgroundColor: Colors.duplicate + '08',
-          }]} />
-        )}
-
-        {/* Capa intermedia */}
-        <View style={[styles.stackLayerBase, {
-          top: stackOffset, left: stackOffset,
-          borderRadius: cardRadius,
-          borderWidth: 1,
-          borderColor: Colors.duplicate + '38',
-          backgroundColor: Colors.duplicate + '10',
-        }]} />
-
-        {/* Tarjeta principal encima */}
-        <Pressable
-          onPress={onTap}
-          onLongPress={onLongPress}
-          delayLongPress={400}
-          style={({ pressed }) => [
-            styles.stackMain,
-            {
-              right: mainRight,
-              bottom: mainBottom,
-              borderRadius: cardRadius,
-              borderColor,
-              borderWidth: borderW,
-              backgroundColor: bgColor,
-              padding: isTiny ? 3 : isMedium ? 6 : 4,
-            },
-            pressed && { opacity: 0.6, transform: [{ scale: 0.94 }] },
-          ]}
-        >
-          {cardContent}
-        </Pressable>
-      </View>
-    );
-  }
-
-  // ── Normal (no duplicado) ─────────────────────────────────────
   return (
     <Pressable
       onPress={onTap}
@@ -214,25 +157,7 @@ export function StickerCell({ sticker, qty, mode, onTap, onLongPress }: StickerC
         pressed && { opacity: 0.6, transform: [{ scale: 0.94 }] },
       ]}
     >
-      {sticker.foil && (
-        <View style={[styles.foilCorner, isTiny && styles.foilCornerTiny]} />
-      )}
-      <Text style={[
-        isTiny ? styles.codeTiny : isMedium ? styles.codeMedium : styles.codeSmall,
-        { color: textColor },
-      ]}>
-        {sticker.code}
-      </Text>
-      <Text
-        style={[
-          isTiny ? styles.nameTiny : isMedium ? styles.nameMedium : styles.nameSmall,
-          { color: subColor },
-        ]}
-        numberOfLines={2}
-      >
-        {shortName(sticker, isTiny)}
-      </Text>
-      {owned && <View style={[styles.dot, { backgroundColor: Colors.owned }]} />}
+      {cardContent}
     </Pressable>
   );
 }
@@ -259,31 +184,7 @@ const styles = StyleSheet.create({
     padding: 6,
   },
 
-  // ── Stack (duplicados) ────────────────────────────────────────
-  stackWrapper: {
-    flex: 1,
-    aspectRatio: 0.72,
-    position: 'relative',
-  },
-  stackWrapperTiny:   { aspectRatio: 0.62 },
-  stackWrapperMedium: { aspectRatio: 0.72 },
-
-  // Layers: se anclan en right:0, bottom:0 y se desplazan con top/left inline
-  stackLayerBase: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-  },
-
-  // Tarjeta principal: cubre el área top-left dejando espacio a las capas
-  stackMain: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
+  // (Stack styles removed)
 
   // ── FOIL corner triangle ──────────────────────────────────────
   foilCorner: {
@@ -327,15 +228,22 @@ const styles = StyleSheet.create({
 
   // ── Badges grid ───────────────────────────────────────────────
   dupBadge: {
-    position: 'absolute', bottom: 2, right: 2,
-    backgroundColor: Colors.duplicate + '30',
-    paddingHorizontal: 4, paddingVertical: 1,
-    borderRadius: 4, borderWidth: 1,
-    borderColor: Colors.duplicate + '70',
+    position: 'absolute', bottom: -2, right: -2,
+    backgroundColor: Colors.duplicate,
+    minWidth: 22, height: 22,
+    borderRadius: 11,
+    alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 2, borderColor: Colors.bgCard,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 3,
+    elevation: 4,
   },
-  dupBadgeTiny: { paddingHorizontal: 2, paddingVertical: 0 },
+  dupBadgeTiny: { minWidth: 16, height: 16, borderRadius: 8, bottom: -1, right: -1, borderWidth: 1.5 },
   dupText: {
-    fontFamily: 'DMSans_700Bold', fontSize: 8, color: Colors.duplicate,
+    fontFamily: 'Oswald_600SemiBold', fontSize: 11, color: '#141E33',
   },
   dot: {
     position: 'absolute', bottom: 3, right: 3,
