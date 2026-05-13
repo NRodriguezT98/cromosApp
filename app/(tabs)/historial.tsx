@@ -1,13 +1,14 @@
 import React, { useMemo, useState, useRef } from 'react';
 import {
   View, Text, SectionList, StyleSheet, Pressable,
-  TextInput, KeyboardAvoidingView, Platform, Animated,
+  TextInput, KeyboardAvoidingView, Platform, Animated, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, Typography, Spacing, Radii } from '@/constants/theme';
 import { useStickers, ActivityEntry } from '@/context/StickersContext';
 import {
   ArrowLeft, Plus, Minus, Trash, MagnifyingGlass, X, CaretLeft, CaretRight,
+  ArrowDown, ArrowUp, ArrowsLeftRight,
 } from 'phosphor-react-native';
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -42,6 +43,8 @@ function formatTime(ts: number): string {
 }
 
 function entryLabel(entry: ActivityEntry): string {
+  if (entry.action === 'trade_in')  return 'Recibí';
+  if (entry.action === 'trade_out') return 'Di';
   if (entry.action === 'add') {
     if (entry.qty === 1) return 'Nuevo';
     const reps = entry.qty - 1;
@@ -61,7 +64,7 @@ export default function HistorialScreen() {
   const { history, clearHistory } = useStickers();
   const router  = useRouter();
   const [query, setQuery] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'add' | 'remove'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'add' | 'remove' | 'trade'>('all');
   const inputRef = useRef<TextInput>(null);
   const focusAnim = useRef(new Animated.Value(0)).current;
 
@@ -99,24 +102,25 @@ export default function HistorialScreen() {
 
   const activeSection = dayIndex >= 0 ? sections[dayIndex] : null;
 
-  // Daily metrics
-  const addEvents = dayIndex === -1 
-    ? history.filter(e => e.action === 'add')
-    : (activeSection?.data.filter(e => e.action === 'add') || []);
+  // Daily metrics (only 'add' events count toward sobre stats)
+  const sourceData = dayIndex === -1 ? history : (activeSection?.data ?? []);
+  const addEvents  = sourceData.filter(e => e.action === 'add');
 
-  const mTotal = addEvents.length;
-  const mNuevos = addEvents.filter(e => e.qty === 1).length;
+  const mTotal     = addEvents.length;
+  const mNuevos    = addEvents.filter(e => e.qty === 1).length;
   const mRepetidos = addEvents.filter(e => e.qty > 1).length;
-  const mSobres = Math.ceil(mTotal / 7);
+  const mSobres    = Math.ceil(mTotal / 7);
 
   // Apply search + type filter
   const filteredSections: DaySection[] = useMemo(() => {
     const sourceSections = dayIndex === -1 ? sections : (activeSection ? [activeSection] : []);
     const q = query.trim();
-    
+
     return sourceSections.map(sec => {
       const filteredData = sec.data.filter(e => {
-        if (filterType !== 'all' && e.action !== filterType) return false;
+        if (filterType === 'add'    && e.action !== 'add')    return false;
+        if (filterType === 'remove' && e.action !== 'remove') return false;
+        if (filterType === 'trade'  && e.action !== 'trade_in' && e.action !== 'trade_out') return false;
         if (q && !matchesQuery(e, q)) return false;
         return true;
       });
@@ -129,9 +133,8 @@ export default function HistorialScreen() {
 
   // Quick stats for filter tabs
   const totalAdded   = mTotal;
-  const totalRemoved = dayIndex === -1
-    ? history.filter(e => e.action === 'remove').length
-    : (activeSection?.data.filter(e => e.action === 'remove').length || 0);
+  const totalRemoved = sourceData.filter(e => e.action === 'remove').length;
+  const totalTrades  = sourceData.filter(e => e.action === 'trade_in' || e.action === 'trade_out').length;
 
   return (
     <KeyboardAvoidingView
@@ -141,7 +144,7 @@ export default function HistorialScreen() {
       {/* ── Header ── */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Pressable style={styles.backBtn} onPress={() => router.back()}>
+          <Pressable style={styles.backBtn} onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/')}>
             <ArrowLeft size={18} color={Colors.textPrimary} weight="bold" />
           </Pressable>
           {history.length > 0 && (
@@ -256,16 +259,25 @@ export default function HistorialScreen() {
           )}
 
           {/* ── Filter tabs ── */}
-          <View style={styles.filterTabs}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterTabs}
+          >
             {(
               [
-                { key: 'all',    label: 'Todos',      count: totalFiltered },
-                { key: 'add',    label: 'Añadidos',   count: totalAdded },
-                { key: 'remove', label: 'Eliminados', count: totalRemoved },
+                { key: 'all',    label: 'Todos',         count: totalFiltered },
+                { key: 'add',    label: 'Añadidos',      count: totalAdded },
+                { key: 'remove', label: 'Eliminados',    count: totalRemoved },
+                { key: 'trade',  label: 'Intercambios',  count: totalTrades },
               ] as const
             ).map(({ key, label, count }) => {
               const active = filterType === key;
-              const dotColor = key === 'add' ? Colors.owned : key === 'remove' ? Colors.red : Colors.textSecondary;
+              const dotColor =
+                key === 'add'    ? Colors.owned :
+                key === 'remove' ? Colors.red :
+                key === 'trade'  ? Colors.trade :
+                Colors.textSecondary;
               return (
                 <Pressable
                   key={key}
@@ -286,7 +298,7 @@ export default function HistorialScreen() {
                 </Pressable>
               );
             })}
-          </View>
+          </ScrollView>
         </View>
       )}
 
@@ -336,55 +348,54 @@ export default function HistorialScreen() {
           )}
 
           renderItem={({ item: entry, index, section }) => {
-            const isAdd   = entry.action === 'add';
-            const isDup   = isAdd && entry.qty > 1;
-            const accentColor = isAdd
-              ? (isDup ? Colors.duplicate : Colors.owned)
-              : Colors.red;
+            const isTrade    = entry.action === 'trade_in' || entry.action === 'trade_out';
+            const isTradeIn  = entry.action === 'trade_in';
+            const isAdd      = entry.action === 'add';
+            const isDup      = isAdd && entry.qty > 1;
+
+            const accentColor = isTrade
+              ? (isTradeIn ? Colors.owned : Colors.duplicate)
+              : isAdd
+                ? (isDup ? Colors.duplicate : Colors.owned)
+                : Colors.red;
+
             const isFirst = index === 0;
             const isLast  = index === section.data.length - 1;
+
+            const EntryIcon = isTrade
+              ? (isTradeIn ? ArrowDown : ArrowUp)
+              : (isAdd ? Plus : Minus);
 
             return (
               <View style={[
                 styles.entryCard,
                 isFirst && styles.entryCardFirst,
                 isLast  && styles.entryCardLast,
+                isTrade && { backgroundColor: (isTradeIn ? Colors.owned : Colors.duplicate) + '08' },
               ]}>
-                {/* Color-coded left accent */}
                 <View style={[styles.entryAccent, { backgroundColor: accentColor }]} />
 
-                {/* Icon */}
-                <View style={[styles.entryIcon, { backgroundColor: accentColor + '18' }]}>
-                  {isAdd
-                    ? <Plus  size={12} color={accentColor} weight="bold" />
-                    : <Minus size={12} color={accentColor} weight="bold" />}
+                <View style={[styles.entryIcon, { backgroundColor: accentColor + '20' }]}>
+                  <EntryIcon size={12} color={accentColor} weight="bold" />
                 </View>
 
-                {/* Info */}
                 <View style={styles.entryInfo}>
                   <View style={styles.entryNameRow}>
-                    <View style={styles.entryCodeBadge}>
+                    <View style={[styles.entryCodeBadge, isTrade && { borderColor: Colors.trade + '40' }]}>
                       <Text style={styles.entryCode}>{entry.code}</Text>
                     </View>
-                    <Text style={styles.entryName} numberOfLines={1}>
-                      {entry.name}
-                    </Text>
+                    <Text style={styles.entryName} numberOfLines={1}>{entry.name}</Text>
                   </View>
-                  <Text style={styles.entryTeam} numberOfLines={1}>
-                    {entry.teamName}
-                  </Text>
+                  <Text style={styles.entryTeam} numberOfLines={1}>{entry.teamName}</Text>
                 </View>
 
-                {/* Status + Time */}
                 <View style={styles.entryMeta}>
-                  <View style={[styles.entryStatusBadge, { backgroundColor: accentColor + '18' }]}>
+                  <View style={[styles.entryStatusBadge, { backgroundColor: accentColor + '20' }]}>
                     <Text style={[styles.entryStatus, { color: accentColor }]}>
                       {entryLabel(entry)}
                     </Text>
                   </View>
-                  <Text style={styles.entryTime}>
-                    {formatTime(entry.timestamp)}
-                  </Text>
+                  <Text style={styles.entryTime}>{formatTime(entry.timestamp)}</Text>
                 </View>
               </View>
             );
@@ -604,7 +615,7 @@ const styles = StyleSheet.create({
   // Filter tabs
   filterTabs: {
     flexDirection: 'row', gap: 6,
-    paddingTop: 4,
+    paddingTop: 4, paddingBottom: 2,
   },
   filterTab: {
     flexDirection: 'row', alignItems: 'center', gap: 5,

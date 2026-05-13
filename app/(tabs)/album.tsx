@@ -1,7 +1,7 @@
-import React, { useMemo, useState, useRef, useCallback } from 'react';
+import React, { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  Modal, TextInput, Keyboard,
+  Modal, TextInput, Keyboard, Animated, Platform,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 
@@ -49,6 +49,105 @@ function ViewIcon({ mode, color }: { mode: ViewMode; color: string }) {
   return                        <ListIcon        size={size} color={color} weight={w} />;
 }
 
+// ── Search result row ──────────────────────────────────────────────────────
+
+function SearchResultRow({
+  sticker, qty, onIncrement, onDecrement,
+}: {
+  sticker: Sticker; qty: number; onIncrement: () => void; onDecrement: () => void;
+}) {
+  const statusColor = qty === 0 ? Colors.textMuted : qty === 1 ? Colors.owned : Colors.duplicate;
+  const statusLabel = qty === 0 ? 'FALTA' : qty === 1 ? 'TENGO' : `×${qty}`;
+  const borderLeft  = qty === 0 ? Colors.border : qty === 1 ? Colors.owned : Colors.duplicate;
+
+  return (
+    <Pressable
+      style={({ pressed }) => [srStyles.row, { borderLeftColor: borderLeft }, pressed && { opacity: 0.65 }]}
+      onPress={onIncrement}
+      onLongPress={onDecrement}
+      delayLongPress={400}
+    >
+      <FlagImage isoCode={sticker.isoCode} size={26} style={{ borderRadius: 4, flexShrink: 0 }} />
+      <View style={srStyles.codeBadge}>
+        <Text style={srStyles.codeText}>{sticker.code}</Text>
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={srStyles.name} numberOfLines={1}>{sticker.name}</Text>
+        <Text style={srStyles.team} numberOfLines={1}>{sticker.teamName}</Text>
+      </View>
+      <View style={[srStyles.statusBadge, { backgroundColor: statusColor + '22', borderColor: statusColor + '55' }]}>
+        <Text style={[srStyles.statusText, { color: statusColor }]}>{statusLabel}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+const srStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: Colors.bgCard, borderRadius: Radii.md,
+    padding: Spacing.md, marginBottom: 6,
+    borderWidth: 1, borderColor: Colors.border,
+    borderLeftWidth: 3,
+  },
+  codeBadge: {
+    backgroundColor: Colors.bgCardAlt, paddingHorizontal: 8, paddingVertical: 4,
+    borderRadius: Radii.sm, minWidth: 56, alignItems: 'center',
+    borderWidth: 1, borderColor: Colors.border, flexShrink: 0,
+  },
+  codeText:   { fontFamily: 'DMSans_500Medium', fontSize: 11, color: Colors.textSecondary, letterSpacing: 1 },
+  name:       { fontFamily: 'DMSans_500Medium', fontSize: 13, color: Colors.textPrimary, letterSpacing: 0.2 },
+  team:       { fontFamily: 'DMSans_400Regular', fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: Radii.full, borderWidth: 1, flexShrink: 0 },
+  statusText:  { fontFamily: 'DMSans_700Bold', fontSize: 11 },
+});
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+
+function SearchToast({ message }: { message: string | null }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const anim    = useRef<Animated.CompositeAnimation>();
+
+  useEffect(() => {
+    anim.current?.stop();
+    if (message) {
+      opacity.setValue(0);
+      anim.current = Animated.sequence([
+        Animated.timing(opacity, { toValue: 1, duration: 150, useNativeDriver: true }),
+        Animated.delay(1500),
+        Animated.timing(opacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+      ]);
+      anim.current.start();
+    } else {
+      opacity.setValue(0);
+    }
+  }, [message]);
+
+  // Siempre renderizado — no desmonta para no causar re-layout del FlashList
+  return (
+    <Animated.View style={[toastStyles.wrap, { opacity }]} pointerEvents="none">
+      <Text style={toastStyles.text}>{message ?? ''}</Text>
+    </Animated.View>
+  );
+}
+
+const TAB_BAR_H = Platform.OS === 'ios' ? 85 : 68;
+
+const toastStyles = StyleSheet.create({
+  wrap: {
+    position: 'absolute',
+    bottom: TAB_BAR_H + 12,
+    left: Spacing.lg, right: Spacing.lg, zIndex: 99,
+    backgroundColor: Colors.bgCard, borderRadius: Radii.full,
+    paddingHorizontal: Spacing.lg, paddingVertical: 11,
+    borderWidth: 1, borderColor: Colors.borderBright,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4, shadowRadius: 12, elevation: 10,
+  },
+  text: { fontFamily: 'DMSans_500Medium', fontSize: 13, color: Colors.textPrimary, textAlign: 'center' },
+});
+
 /** Normalise a string: lowercase + remove accents */
 function norm(s: string) {
   return s
@@ -71,6 +170,33 @@ export default function AlbumScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const searchInputRef = useRef<TextInput>(null);
+
+  // Toast feedback
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const showToast = useCallback((msg: string) => {
+    clearTimeout(toastTimer.current);
+    setToastMsg(msg);
+    toastTimer.current = setTimeout(() => setToastMsg(null), 2200);
+  }, []);
+
+  const handleSearchIncrement = useCallback((sticker: Sticker) => {
+    const current = quantities[sticker.code] ?? 0;
+    increment(sticker.code);
+    if (current === 0) showToast(`✓ ${sticker.code} · ${sticker.name} — ¡Lo tenés!`);
+    else if (current === 1) showToast(`✓ ${sticker.code} · ${sticker.name} — 1 repetido`);
+    else showToast(`✓ ${sticker.code} · ${sticker.name} — ${current} repetidos`);
+  }, [quantities, increment, showToast]);
+
+  const handleSearchDecrement = useCallback((sticker: Sticker) => {
+    const current = quantities[sticker.code] ?? 0;
+    if (current === 0) return;
+    decrement(sticker.code);
+    if (current === 1) showToast(`− ${sticker.code} · ${sticker.name} — eliminado`);
+    else if (current === 2) showToast(`− ${sticker.code} · ${sticker.name} — sin repetidos`);
+    else showToast(`− ${sticker.code} · ${sticker.name} — quedan ${current - 2} repetidos`);
+  }, [quantities, decrement, showToast]);
 
   const cols = COLS[mode];
 
@@ -164,13 +290,6 @@ export default function AlbumScreen() {
   }, [sections, baseStickers, mode, cols, subTab, collapsed, sortMode, getSectionStats]);
 
   const activeSortLabel = SORT_OPTIONS.find(o => o.key === sortMode)?.label ?? '';
-
-  // Build a code→section map for search result labels
-  const sectionByCode = useMemo(() => {
-    const map: Record<string, typeof sections[0]> = {};
-    for (const sec of sections) map[sec.code] = sec;
-    return map;
-  }, [sections]);
 
   const estimatedItemSize = mode === 'list' ? 60 : mode === 'tiny' ? 80 : mode === 'medium' ? 160 : 120;
 
@@ -278,45 +397,37 @@ export default function AlbumScreen() {
 
       {/* === SEARCH RESULTS === */}
       {isSearching ? (
-        <FlashList
-          data={searchResults}
-          estimatedItemSize={80}
-          keyExtractor={s => s.code}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.list}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Text style={[Typography.titleM, { color: Colors.textSecondary, textAlign: 'center' }]}>
-                Sin resultados
-              </Text>
-              <Text style={[Typography.bodyM, { color: Colors.textMuted, textAlign: 'center', marginTop: 8 }]}>
-                Prueba con "{searchQuery.toUpperCase()}", el nombre del jugador o el país
-              </Text>
-            </View>
-          }
-          renderItem={({ item: sticker }) => {
-            const sec = sectionByCode[sticker.teamCode];
-            return (
-              <View style={styles.searchResultItem}>
-                <View style={styles.searchResultBadge}>
-                  <FlagImage isoCode={sec?.isoCode ?? null} size={14} />
-                  <Text style={styles.searchResultBadgeText}>{sticker.code}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <StickerCell
-                    sticker={sticker}
-                    qty={quantities[sticker.code] ?? 0}
-                    mode="list"
-                    onTap={() => increment(sticker.code)}
-                    onLongPress={() => decrement(sticker.code)}
-                  />
-                </View>
+        <View style={{ flex: 1 }}>
+          <FlashList
+            data={searchResults}
+            extraData={quantities}
+            estimatedItemSize={64}
+            keyExtractor={s => s.code}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.list}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <Text style={[Typography.titleM, { color: Colors.textSecondary, textAlign: 'center' }]}>
+                  Sin resultados
+                </Text>
+                <Text style={[Typography.bodyM, { color: Colors.textMuted, textAlign: 'center', marginTop: 8 }]}>
+                  Probá con "{searchQuery.toUpperCase()}", el nombre del jugador o el país
+                </Text>
               </View>
-            );
-          }}
-          ListFooterComponent={<View style={{ height: 120 }} />}
-        />
+            }
+            renderItem={({ item: sticker }) => (
+              <SearchResultRow
+                sticker={sticker}
+                qty={quantities[sticker.code] ?? 0}
+                onIncrement={() => handleSearchIncrement(sticker)}
+                onDecrement={() => handleSearchDecrement(sticker)}
+              />
+            )}
+            ListFooterComponent={<View style={{ height: 120 }} />}
+          />
+          <SearchToast message={toastMsg} />
+        </View>
       ) : (
         /* === MAIN ALBUM LIST === */
         <FlashList
@@ -484,19 +595,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  /* Search results */
-  searchResultItem: {
-    marginBottom: 6,
-  },
-  searchResultBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 8, paddingVertical: 3,
-    marginBottom: 2,
-  },
-  searchResultBadgeText: {
-    fontFamily: 'DMSans_700Bold', fontSize: 11,
-    color: Colors.textMuted, letterSpacing: 1,
-  },
 
   sortBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,

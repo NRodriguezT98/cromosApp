@@ -23,6 +23,8 @@ export const Colors = {
   missingSoft: 'rgba(58,74,107,0.3)',
   duplicate: '#FF6D00',
   duplicateSoft: 'rgba(255,109,0,0.15)',
+  trade: '#6366F1',
+  tradeSoft: 'rgba(99,102,241,0.15)',
 
   // Texto
   textPrimary: '#FFFFFF',

@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
+import { useRouter } from 'expo-router';
 import { Colors, Typography, Spacing, Radii } from '@/constants/theme';
 import { useStickers, Section } from '@/context/StickersContext';
 import { StickerCell, ViewMode } from '@/components/ui/StickerCell';
 import { FlagImage } from '@/components/ui/FlagImage';
 import { ExportModal } from '@/components/ui/ExportModal';
-import { ShareNetwork, GridFour, SquaresFour, Rows, List } from 'phosphor-react-native';
+import { ShareNetwork, GridFour, SquaresFour, Rows, List, Swap } from 'phosphor-react-native';
 
 const COLS: Record<ViewMode, number> = { tiny: 6, small: 4, medium: 3, list: 1 };
 
@@ -40,6 +41,7 @@ type FlatItem =
 
 export default function RepetidosScreen() {
   const { getDuplicateStickers, sections, quantities, increment, decrement } = useStickers();
+  const router = useRouter();
   const [mode, setMode]         = useState<ViewMode>('small');
   const [filter, setFilter]     = useState<StickerFilter>('all');
   const [exportVisible, setExportVisible] = useState(false);
@@ -99,6 +101,9 @@ export default function RepetidosScreen() {
               );
             })}
           </View>
+          <Pressable style={styles.tradeBtn} onPress={() => router.push('/(tabs)/intercambios')}>
+            <Swap size={16} color={Colors.trade} weight="bold" />
+          </Pressable>
           {duplicates.length > 0 && (
             <Pressable style={styles.shareBtn} onPress={() => setExportVisible(true)}>
               <ShareNetwork size={16} color={Colors.textPrimary} weight="bold" />
@@ -200,6 +205,11 @@ const styles = StyleSheet.create({
   },
   toggleBtn: { padding: 7, borderRadius: Radii.sm, alignItems: 'center', justifyContent: 'center' },
   toggleBtnActive: { backgroundColor: Colors.duplicate + '20', borderWidth: 1, borderColor: Colors.duplicate + '50' },
+  tradeBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: Colors.trade + '20', borderWidth: 1, borderColor: Colors.trade + '50',
+    alignItems: 'center', justifyContent: 'center',
+  },
   shareBtn: {
     width: 36, height: 36, borderRadius: 18,
     backgroundColor: Colors.duplicate, alignItems: 'center', justifyContent: 'center',

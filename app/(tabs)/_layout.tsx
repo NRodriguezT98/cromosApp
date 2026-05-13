@@ -5,18 +5,19 @@ import { BlurView } from 'expo-blur';
 import {
   HouseIcon,
   BookOpenIcon,
-  MagnifyingGlassIcon,
   ClockIcon,
   Camera,
+  ArrowsLeftRight,
 } from 'phosphor-react-native';
 import { Colors, Typography } from '@/constants/theme';
 import { ScannerModal } from '@/components/ui/ScannerModal';
 
-function TabIcon({ icon, label, focused }: { icon: React.ReactNode; label: string; focused: boolean }) {
+function TabIcon({ icon, label, focused, accentColor }: { icon: React.ReactNode; label: string; focused: boolean; accentColor?: string }) {
+  const accent = accentColor ?? Colors.red;
   return (
-    <View style={[styles.tabItem, focused && styles.tabItemFocused]}>
+    <View style={[styles.tabItem, focused && { backgroundColor: accent + '20' }]}>
       {icon}
-      <Text style={[styles.tabLabel, focused && styles.tabLabelFocused]} numberOfLines={1}>{label}</Text>
+      <Text style={[styles.tabLabel, focused && { color: accent }]} numberOfLines={1}>{label}</Text>
     </View>
   );
 }
@@ -43,11 +44,7 @@ export default function TabLayout() {
           name="index"
           options={{
             tabBarIcon: ({ focused }) => (
-              <TabIcon
-                icon={<HouseIcon size={22} weight={focused ? 'fill' : 'regular'} color={focused ? Colors.red : Colors.textMuted} />}
-                label="Inicio"
-                focused={focused}
-              />
+              <TabIcon icon={<HouseIcon size={22} weight={focused ? 'fill' : 'regular'} color={focused ? Colors.red : Colors.textMuted} />} label="Inicio" focused={focused} />
             ),
           }}
         />
@@ -55,11 +52,7 @@ export default function TabLayout() {
           name="album"
           options={{
             tabBarIcon: ({ focused }) => (
-              <TabIcon
-                icon={<BookOpenIcon size={22} weight={focused ? 'fill' : 'regular'} color={focused ? Colors.red : Colors.textMuted} />}
-                label="Álbum"
-                focused={focused}
-              />
+              <TabIcon icon={<BookOpenIcon size={22} weight={focused ? 'fill' : 'regular'} color={focused ? Colors.red : Colors.textMuted} />} label="Álbum" focused={focused} />
             ),
           }}
         />
@@ -83,14 +76,10 @@ export default function TabLayout() {
         />
 
         <Tabs.Screen
-          name="buscar"
+          name="intercambios"
           options={{
             tabBarIcon: ({ focused }) => (
-              <TabIcon
-                icon={<MagnifyingGlassIcon size={22} weight={focused ? 'fill' : 'regular'} color={focused ? Colors.red : Colors.textMuted} />}
-                label="Buscar"
-                focused={focused}
-              />
+              <TabIcon icon={<ArrowsLeftRight size={22} weight={focused ? 'fill' : 'regular'} color={focused ? Colors.trade : Colors.textMuted} />} label="Cambios" focused={focused} accentColor={Colors.trade} />
             ),
           }}
         />
@@ -98,11 +87,7 @@ export default function TabLayout() {
           name="historial"
           options={{
             tabBarIcon: ({ focused }) => (
-              <TabIcon
-                icon={<ClockIcon size={22} weight={focused ? 'fill' : 'regular'} color={focused ? Colors.red : Colors.textMuted} />}
-                label="Historial"
-                focused={focused}
-              />
+              <TabIcon icon={<ClockIcon size={22} weight={focused ? 'fill' : 'regular'} color={focused ? Colors.red : Colors.textMuted} />} label="Historial" focused={focused} />
             ),
           }}
         />
@@ -111,6 +96,7 @@ export default function TabLayout() {
         <Tabs.Screen name="faltan"    options={{ href: null }} />
         <Tabs.Screen name="repetidos" options={{ href: null }} />
         <Tabs.Screen name="tengo"     options={{ href: null }} />
+        <Tabs.Screen name="buscar"    options={{ href: null }} />
         <Tabs.Screen name="two"       options={{ href: null }} />
       </Tabs>
 
@@ -139,15 +125,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     minWidth: 60,
   },
-  tabItemFocused: {
-    backgroundColor: Colors.redSoft,
-  },
   tabLabel: {
     ...Typography.labelS,
     color: Colors.textMuted,
-  },
-  tabLabelFocused: {
-    color: Colors.red,
   },
   scanTabBtn: {
     width: 48,
