@@ -57,9 +57,9 @@ function buildText(type: ExportType, selected: SectionGroup[], totalStickers: nu
     const lines = selected.map(g => {
       const flag = flagEmoji(g.section.isoCode);
       const items = g.stickers.map(s =>
-        s.extras > 1 ? `${s.code} - ${s.name} (+${s.extras})` : `${s.code} - ${s.name}`
+        s.extras > 1 ? `${s.code} - ${s.name} (x${s.extras})` : `${s.code} - ${s.name}`
       ).join('\n');
-      return `${flag ? flag + ' ' : ''}${g.section.name} (${g.stickers.length} cromo${g.stickers.length !== 1 ? 's' : ''} · ${g.extrasCount} extra${g.extrasCount !== 1 ? 's' : ''})\n${items}`;
+      return `${flag ? flag + ' ' : ''}${g.section.name} (${g.extrasCount} Repetida${g.extrasCount !== 1 ? 's' : ''})\n${items}`;
     });
     return [
       '🔄 OFREZCO - Panini Mundial 2026',
