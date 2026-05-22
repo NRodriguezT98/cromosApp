@@ -57,7 +57,7 @@ function SearchResultRow({
   sticker: Sticker; qty: number; onIncrement: () => void; onDecrement: () => void;
 }) {
   const statusColor = qty === 0 ? Colors.textMuted : qty === 1 ? Colors.owned : Colors.duplicate;
-  const statusLabel = qty === 0 ? 'FALTA' : qty === 1 ? 'TENGO' : `+${qty - 1}`;
+  const statusLabel = qty === 0 ? 'FALTA' : qty === 1 ? 'TENGO' : `×${qty - 1}`;
   const borderLeft  = qty === 0 ? Colors.border : qty === 1 ? Colors.owned : Colors.duplicate;
 
   return (
@@ -106,7 +106,7 @@ const srStyles = StyleSheet.create({
 
 function SearchToast({ message }: { message: string | null }) {
   const opacity = useRef(new Animated.Value(0)).current;
-  const anim    = useRef<Animated.CompositeAnimation>();
+  const anim    = useRef<Animated.CompositeAnimation | undefined>(undefined);
 
   useEffect(() => {
     anim.current?.stop();
@@ -173,7 +173,7 @@ export default function AlbumScreen() {
 
   // Toast feedback
   const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const toastTimer = useRef<ReturnType<typeof setTimeout>>();
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const showToast = useCallback((msg: string) => {
     clearTimeout(toastTimer.current);
