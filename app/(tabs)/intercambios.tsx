@@ -60,6 +60,7 @@ function TradeDetailModal({
                 {trade.friendName ? `Intercambio con ${trade.friendName}` : 'Intercambio'}
               </Text>
               <Text style={detail.headerSub}>
+                {trade.tradeNumber != null ? `No. ${String(trade.tradeNumber).padStart(2, '0')} · ` : ''}
                 {new Date(trade.timestamp).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}
                 {' · '}{formatTime(trade.timestamp)}
               </Text>
@@ -144,7 +145,14 @@ function TradeCard({ trade, onDelete, onPress }: { trade: TradeEntry; onDelete: 
           <SwapIcon size={13} color={Colors.trade} weight="fill" />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.tradeTime}>{formatTime(trade.timestamp)}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            {trade.tradeNumber != null && (
+              <View style={styles.tradeNumberBadge}>
+                <Text style={styles.tradeNumberText}>No. {String(trade.tradeNumber).padStart(2, '0')}</Text>
+              </View>
+            )}
+            <Text style={styles.tradeTime}>{formatTime(trade.timestamp)}</Text>
+          </View>
           {trade.friendName && (
             <Text style={styles.tradeFriend} numberOfLines={1}>con {trade.friendName}</Text>
           )}
@@ -535,6 +543,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.trade + '25',
     alignItems: 'center', justifyContent: 'center',
   },
+  tradeNumberBadge: {
+    backgroundColor: Colors.trade + '20', borderRadius: 4, borderWidth: 1, borderColor: Colors.trade + '40',
+    paddingHorizontal: 5, paddingVertical: 1,
+  },
+  tradeNumberText:  { fontFamily: 'Oswald_600SemiBold', fontSize: 10, color: Colors.trade, letterSpacing: 0.5 },
   tradeTime:        { fontFamily: 'DMSans_500Medium', fontSize: 12, color: Colors.textSecondary },
   tradeFriend:      { fontFamily: 'DMSans_400Regular', fontSize: 10, color: Colors.trade, marginTop: 1 },
   tradeHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },

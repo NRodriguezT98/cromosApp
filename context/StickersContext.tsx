@@ -16,6 +16,7 @@ export interface TradeSticker {
 export interface TradeEntry {
   id: string;
   timestamp: number;
+  tradeNumber: number;
   given: TradeSticker[];
   received: TradeSticker[];
   friendName?: string;
@@ -68,14 +69,16 @@ export interface ActivityEntry {
   action: 'add' | 'remove' | 'trade_in' | 'trade_out';
   qty: number;
   timestamp: number;
+  tradeNumber?: number;
 }
 
-const STORAGE_KEY     = 'cromitos_quantities';
-const HISTORY_KEY     = 'cromitos_history';
-const TRADES_KEY      = 'cromitos_trades';
-const BACKUP_META_KEY = 'cromitos_last_backup';
-const MIGRATED_KEY    = 'cromitos_migrated_v1';
-const BACKUP_VERSION  = 1;
+const STORAGE_KEY          = 'cromitos_quantities';
+const HISTORY_KEY          = 'cromitos_history';
+const TRADES_KEY           = 'cromitos_trades';
+const BACKUP_META_KEY      = 'cromitos_last_backup';
+const MIGRATED_KEY         = 'cromitos_migrated_v1';
+const TRADE_NUMS_MIGRATED  = 'cromitos_trade_nums_v1';
+const BACKUP_VERSION       = 1;
 
 // Legacy AsyncStorage keys (only used during one-time migration)
 const AS_STORAGE_KEY     = '@cromitos_quantities';
@@ -107,7 +110,16 @@ function loadInitialBackupDate(): number | null {
 function loadInitialTrades(): TradeEntry[] {
   if (!storage.getBoolean(MIGRATED_KEY)) return [];
   const raw = storage.getString(TRADES_KEY);
-  return raw ? JSON.parse(raw) : [];
+  if (!raw) return [];
+  const trades: TradeEntry[] = JSON.parse(raw);
+  if (trades.some(t => !t.tradeNumber)) {
+    const sorted = [...trades].sort((a, b) => a.timestamp - b.timestamp);
+    const numberMap = new Map(sorted.map((t, i) => [t.id, i + 1]));
+    const backfilled = trades.map(t => t.tradeNumber ? t : { ...t, tradeNumber: numberMap.get(t.id)! });
+    storage.set(TRADES_KEY, JSON.stringify(backfilled));
+    return backfilled;
+  }
+  return trades;
 }
 
 function reducer(state: State, action: Action): State {
@@ -189,6 +201,28 @@ export function StickersProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  // ── One-time backfill: add tradeNumber to existing history entries ─────────
+  useEffect(() => {
+    if (!state.loaded || storage.getBoolean(TRADE_NUMS_MIGRATED)) return;
+    const needsBackfill = history.some(
+      e => (e.action === 'trade_in' || e.action === 'trade_out') && e.tradeNumber == null,
+    );
+    if (!needsBackfill) { storage.set(TRADE_NUMS_MIGRATED, true); return; }
+    const tsToNumber = new Map(trades.map(t => [t.timestamp, t.tradeNumber]));
+    setHistory(prev => {
+      const backfilled = prev.map(e => {
+        if ((e.action === 'trade_in' || e.action === 'trade_out') && e.tradeNumber == null) {
+          const num = tsToNumber.get(e.timestamp);
+          return num != null ? { ...e, tradeNumber: num } : e;
+        }
+        return e;
+      });
+      storage.set(HISTORY_KEY, JSON.stringify(backfilled));
+      return backfilled;
+    });
+    storage.set(TRADE_NUMS_MIGRATED, true);
+  }, [state.loaded]);
+
   // ── Persist quantities ─────────────────────────────────────────────────────
   useEffect(() => {
     if (state.loaded) {
@@ -234,6 +268,7 @@ export function StickersProvider({ children }: { children: React.ReactNode }) {
 
   const addTrade = useCallback((givenCodes: string[], receivedCodes: string[], friendName?: string) => {
     const now = Date.now();
+    const tradeNumber = trades.length + 1;
     const stickerInfo = (code: string): TradeSticker => {
       const s = stickers.find(st => st.code === code)!;
       const sectionName = sections.find(sec => sec.code === s.teamCode)?.name ?? s.teamName;
@@ -256,12 +291,12 @@ export function StickersProvider({ children }: { children: React.ReactNode }) {
       ...givenCodes.map(code => {
         const s = stickers.find(st => st.code === code)!;
         const sectionName = sections.find(sec => sec.code === s.teamCode)?.name ?? s.teamName;
-        return { code, name: s.name, teamName: sectionName, action: 'trade_out' as const, qty: updates[code], timestamp: now };
+        return { code, name: s.name, teamName: sectionName, action: 'trade_out' as const, qty: updates[code], timestamp: now, tradeNumber };
       }),
       ...receivedCodes.map(code => {
         const s = stickers.find(st => st.code === code)!;
         const sectionName = sections.find(sec => sec.code === s.teamCode)?.name ?? s.teamName;
-        return { code, name: s.name, teamName: sectionName, action: 'trade_in' as const, qty: updates[code], timestamp: now };
+        return { code, name: s.name, teamName: sectionName, action: 'trade_in' as const, qty: updates[code], timestamp: now, tradeNumber };
       }),
     ];
     setHistory(prev => {
@@ -274,6 +309,7 @@ export function StickersProvider({ children }: { children: React.ReactNode }) {
     const entry: TradeEntry = {
       id: `trade_${now}_${Math.random().toString(36).slice(2)}`,
       timestamp: now,
+      tradeNumber,
       given: givenCodes.map(stickerInfo),
       received: receivedCodes.map(stickerInfo),
       ...(friendName ? { friendName } : {}),
@@ -283,7 +319,7 @@ export function StickersProvider({ children }: { children: React.ReactNode }) {
       storage.set(TRADES_KEY, JSON.stringify(next));
       return next;
     });
-  }, [state.quantities]);
+  }, [state.quantities, trades]);
 
   const deleteTrade = useCallback((id: string) => {
     setTrades(prev => {

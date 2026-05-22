@@ -399,6 +399,11 @@ export default function HistorialScreen() {
                       {entryLabel(entry)}
                     </Text>
                   </View>
+                  {isTrade && entry.tradeNumber != null && (
+                    <View style={styles.tradeNumBadge}>
+                      <Text style={styles.tradeNumText}>No. {String(entry.tradeNumber).padStart(2, '0')}</Text>
+                    </View>
+                  )}
                   <Text style={styles.entryTime}>{formatTime(entry.timestamp)}</Text>
                 </View>
               </View>
@@ -595,6 +600,15 @@ const styles = StyleSheet.create({
   entryTime: {
     fontFamily: 'DMSans_400Regular', fontSize: 10,
     color: Colors.textMuted,
+  },
+  tradeNumBadge: {
+    backgroundColor: Colors.trade + '20', borderRadius: 4,
+    borderWidth: 1, borderColor: Colors.trade + '40',
+    paddingHorizontal: 5, paddingVertical: 1,
+  },
+  tradeNumText: {
+    fontFamily: 'Oswald_600SemiBold', fontSize: 9,
+    color: Colors.trade, letterSpacing: 0.5,
   },
 
   // Empty
