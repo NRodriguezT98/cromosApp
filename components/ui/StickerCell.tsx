@@ -137,10 +137,12 @@ export function StickerCell({ sticker, qty, mode, onTap, onLongPress }: StickerC
 
       {dup && (
         <View style={[styles.dupBadge, isTiny && styles.dupBadgeTiny]}>
-          <Text style={[styles.dupText, isTiny && { fontSize: 7 }]}>+{qty - 1}</Text>
+          <Text style={[styles.dupText, isTiny && { fontSize: 9 }]}>×{qty - 1}</Text>
         </View>
       )}
-      {owned && <View style={[styles.dot, { backgroundColor: Colors.owned }]} />}
+      {!missing && (
+        <View style={[styles.statusBar, { backgroundColor: dup ? Colors.duplicate : Colors.owned }]} />
+      )}
     </>
   );
 
@@ -228,26 +230,20 @@ const styles = StyleSheet.create({
 
   // ── Badges grid ───────────────────────────────────────────────
   dupBadge: {
-    position: 'absolute', bottom: -2, right: -2,
+    position: 'absolute', bottom: 8, right: 5,
     backgroundColor: Colors.duplicate,
-    minWidth: 22, height: 22,
-    borderRadius: 11,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 3,
-    borderWidth: 2, borderColor: Colors.bgCard,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 3,
-    elevation: 4,
+    paddingHorizontal: 9,
   },
-  dupBadgeTiny: { minWidth: 16, height: 16, borderRadius: 8, bottom: -1, right: -1, borderWidth: 1.5 },
+  dupBadgeTiny: { bottom: 5, right: 3, height: 16, borderRadius: 8, paddingHorizontal: 5 },
   dupText: {
-    fontFamily: 'Oswald_600SemiBold', fontSize: 11, color: '#141E33',
+    fontFamily: 'Oswald_600SemiBold', fontSize: 13, color: Colors.bgCard, letterSpacing: 0.3,
   },
-  dot: {
-    position: 'absolute', bottom: 3, right: 3,
-    width: 6, height: 6, borderRadius: 3,
+  statusBar: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    height: 3,
   },
 
   // ── Lista ─────────────────────────────────────────────────────
