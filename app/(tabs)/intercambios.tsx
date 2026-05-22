@@ -56,7 +56,9 @@ function TradeDetailModal({
               <SwapIcon size={14} color={Colors.trade} weight="fill" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={detail.headerTitle}>Intercambio</Text>
+              <Text style={detail.headerTitle}>
+                {trade.friendName ? `Intercambio con ${trade.friendName}` : 'Intercambio'}
+              </Text>
               <Text style={detail.headerSub}>
                 {new Date(trade.timestamp).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}
                 {' · '}{formatTime(trade.timestamp)}
@@ -141,7 +143,12 @@ function TradeCard({ trade, onDelete, onPress }: { trade: TradeEntry; onDelete: 
         <View style={styles.tradeIconWrap}>
           <SwapIcon size={13} color={Colors.trade} weight="fill" />
         </View>
-        <Text style={styles.tradeTime}>{formatTime(trade.timestamp)}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.tradeTime}>{formatTime(trade.timestamp)}</Text>
+          {trade.friendName && (
+            <Text style={styles.tradeFriend} numberOfLines={1}>con {trade.friendName}</Text>
+          )}
+        </View>
         <View style={styles.tradeHeaderRight}>
           <Text style={styles.tradeTapHint}>Ver detalle</Text>
           <CaretRightIcon size={12} color={Colors.textMuted} weight="bold" />
@@ -528,7 +535,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.trade + '25',
     alignItems: 'center', justifyContent: 'center',
   },
-  tradeTime:        { fontFamily: 'DMSans_500Medium', fontSize: 12, color: Colors.textSecondary, flex: 1 },
+  tradeTime:        { fontFamily: 'DMSans_500Medium', fontSize: 12, color: Colors.textSecondary },
+  tradeFriend:      { fontFamily: 'DMSans_400Regular', fontSize: 10, color: Colors.trade, marginTop: 1 },
   tradeHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   tradeTapHint:     { fontFamily: 'DMSans_400Regular', fontSize: 11, color: Colors.textMuted },
   deleteBtn:        { padding: 4, marginLeft: 6 },

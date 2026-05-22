@@ -18,6 +18,7 @@ export interface TradeEntry {
   timestamp: number;
   given: TradeSticker[];
   received: TradeSticker[];
+  friendName?: string;
 }
 
 export interface Sticker {
@@ -139,7 +140,7 @@ interface ContextValue {
   increment: (code: string) => void;
   decrement: (code: string) => void;
   clearHistory: () => void;
-  addTrade: (given: string[], received: string[]) => void;
+  addTrade: (given: string[], received: string[], friendName?: string) => void;
   deleteTrade: (id: string) => void;
   getStats: () => StickerStats;
   getSectionStats: (sectionCode: string) => StickerStats;
@@ -231,7 +232,7 @@ export function StickersProvider({ children }: { children: React.ReactNode }) {
     storage.remove(HISTORY_KEY);
   }, []);
 
-  const addTrade = useCallback((givenCodes: string[], receivedCodes: string[]) => {
+  const addTrade = useCallback((givenCodes: string[], receivedCodes: string[], friendName?: string) => {
     const now = Date.now();
     const stickerInfo = (code: string): TradeSticker => {
       const s = stickers.find(st => st.code === code)!;
@@ -275,6 +276,7 @@ export function StickersProvider({ children }: { children: React.ReactNode }) {
       timestamp: now,
       given: givenCodes.map(stickerInfo),
       received: receivedCodes.map(stickerInfo),
+      ...(friendName ? { friendName } : {}),
     };
     setTrades(prev => {
       const next = [entry, ...prev];

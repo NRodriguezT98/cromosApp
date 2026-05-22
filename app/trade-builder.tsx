@@ -189,7 +189,7 @@ export default function TradeBuilderScreen() {
   };
 
   const handleConfirm = () => {
-    addTrade(givenCodes, receivedCodes);
+    addTrade(givenCodes, receivedCodes, friendName || undefined);
     setConfirmed(true);
     Animated.parallel([
       Animated.spring(successScale,   { toValue: 1, useNativeDriver: true, tension: 70, friction: 9 }),

@@ -109,7 +109,11 @@ export default function HistorialScreen() {
   const mTotal     = addEvents.length;
   const mNuevos    = addEvents.filter(e => e.qty === 1).length;
   const mRepetidos = addEvents.filter(e => e.qty > 1).length;
-  const mSobres    = Math.ceil(mTotal / 7);
+  const mCanjes    = new Set(
+    sourceData
+      .filter(e => e.action === 'trade_in' || e.action === 'trade_out')
+      .map(e => e.timestamp)
+  ).size;
 
   // Apply search + type filter
   const filteredSections: DaySection[] = useMemo(() => {
@@ -202,8 +206,8 @@ export default function HistorialScreen() {
               </View>
               <View style={styles.dailyStatDivider} />
               <View style={styles.dailyStatCard}>
-                <Text style={[styles.dailyStatValue, { color: Colors.textSecondary }]}>{mSobres}</Text>
-                <Text style={styles.dailyStatLabel}>SOBRES</Text>
+                <Text style={[styles.dailyStatValue, { color: Colors.trade }]}>{mCanjes}</Text>
+                <Text style={styles.dailyStatLabel}>CANJES</Text>
               </View>
             </View>
           </View>
