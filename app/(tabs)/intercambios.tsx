@@ -4,8 +4,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Typography, Spacing, Radii } from '@/constants/theme';
-import { useStickers, TradeEntry, TradeSticker } from '@/context/StickersContext';
-import { Plus, Swap, Trash, ArrowDown, ArrowsLeftRight, ArrowUp, Warning, MagnifyingGlassPlus, X, CaretRight } from 'phosphor-react-native';
+import { useStickers, TradeEntry } from '@/context/StickersContext';
+import { PlusIcon, SwapIcon, TrashIcon, ArrowDownIcon, ArrowsLeftRightIcon, ArrowUpIcon, WarningIcon, MagnifyingGlassPlusIcon, XIcon, CaretRightIcon } from 'phosphor-react-native';
 import { useRouter } from 'expo-router';
 
 // Tab bar height + safe area
@@ -53,7 +53,7 @@ function TradeDetailModal({
           {/* Compact header */}
           <View style={detail.header}>
             <View style={detail.headerIcon}>
-              <Swap size={14} color={Colors.trade} weight="fill" />
+              <SwapIcon size={14} color={Colors.trade} weight="fill" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={detail.headerTitle}>Intercambio</Text>
@@ -63,7 +63,7 @@ function TradeDetailModal({
               </Text>
             </View>
             <Pressable onPress={onClose} hitSlop={14} style={detail.closeBtn}>
-              <X size={16} color={Colors.textMuted} weight="bold" />
+              <XIcon size={16} color={Colors.textMuted} weight="bold" />
             </Pressable>
           </View>
 
@@ -89,7 +89,7 @@ function TradeDetailModal({
               <View style={detail.sep}>
                 <View style={detail.sepLine} />
                 <View style={detail.sepIcon}>
-                  <ArrowDown size={12} color={Colors.trade} weight="bold" />
+                  <ArrowDownIcon size={12} color={Colors.trade} weight="bold" />
                 </View>
                 <View style={detail.sepLine} />
               </View>
@@ -116,7 +116,7 @@ function TradeDetailModal({
             style={({ pressed }) => [detail.deleteBtn, pressed && { opacity: 0.75 }]}
             onPress={onDelete}
           >
-            <Trash size={14} color={Colors.red} weight="fill" />
+            <TrashIcon size={14} color={Colors.red} weight="fill" />
             <Text style={detail.deleteBtnText}>Revertir intercambio</Text>
           </Pressable>
         </View>
@@ -139,14 +139,14 @@ function TradeCard({ trade, onDelete, onPress }: { trade: TradeEntry; onDelete: 
     >
       <View style={styles.tradeCardHeader}>
         <View style={styles.tradeIconWrap}>
-          <Swap size={13} color={Colors.trade} weight="fill" />
+          <SwapIcon size={13} color={Colors.trade} weight="fill" />
         </View>
         <Text style={styles.tradeTime}>{formatTime(trade.timestamp)}</Text>
         <View style={styles.tradeHeaderRight}>
           <Text style={styles.tradeTapHint}>Ver detalle</Text>
-          <CaretRight size={12} color={Colors.textMuted} weight="bold" />
+          <CaretRightIcon size={12} color={Colors.textMuted} weight="bold" />
           <Pressable style={styles.deleteBtn} onPress={onDelete} hitSlop={10}>
-            <Trash size={14} color={Colors.textMuted} />
+            <TrashIcon size={14} color={Colors.textMuted} />
           </Pressable>
         </View>
       </View>
@@ -171,7 +171,7 @@ function TradeCard({ trade, onDelete, onPress }: { trade: TradeEntry; onDelete: 
         <View style={styles.tradeSepCol}>
           <View style={styles.tradeSepLine} />
           <View style={styles.tradeSepIcon}>
-            <ArrowDown size={10} color={Colors.trade} weight="bold" />
+            <ArrowDownIcon size={10} color={Colors.trade} weight="bold" />
           </View>
           <View style={styles.tradeSepLine} />
         </View>
@@ -210,7 +210,7 @@ function EmptyState({ onPress }: { onPress: () => void }) {
               style={styles.emptyIconGrad}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             >
-              <ArrowsLeftRight size={40} color={Colors.white} weight="fill" />
+              <ArrowsLeftRightIcon size={40} color={Colors.white} weight="fill" />
             </LinearGradient>
           </View>
         </View>
@@ -249,7 +249,7 @@ function EmptyState({ onPress }: { onPress: () => void }) {
           style={styles.emptyBtnGrad}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
         >
-          <Plus size={18} color={Colors.white} weight="bold" />
+          <PlusIcon size={18} color={Colors.white} weight="bold" />
           <Text style={styles.emptyBtnText}>Registrar primer intercambio</Text>
         </LinearGradient>
       </Pressable>
@@ -282,7 +282,7 @@ function DeleteConfirmSheet({
         <Pressable style={sheet.card} onPress={() => {}}>
           {/* Icon */}
           <View style={sheet.iconWrap}>
-            <Warning size={28} color={Colors.red} weight="fill" />
+            <WarningIcon size={28} color={Colors.red} weight="fill" />
           </View>
 
           <Text style={sheet.title}>Revertir intercambio</Text>
@@ -292,7 +292,7 @@ function DeleteConfirmSheet({
             {/* Given → come back */}
             <View style={sheet.listCol}>
               <View style={sheet.listHeader}>
-                <ArrowUp size={11} color={Colors.owned} weight="bold" />
+                <ArrowUpIcon size={11} color={Colors.owned} weight="bold" />
                 <Text style={[sheet.listTitle, { color: Colors.owned }]}>VUELVEN</Text>
               </View>
               <ScrollView style={{ maxHeight: 100 }} showsVerticalScrollIndicator={false}>
@@ -310,7 +310,7 @@ function DeleteConfirmSheet({
             {/* Received → what happens */}
             <View style={sheet.listCol}>
               <View style={sheet.listHeader}>
-                <ArrowDown size={11} color={Colors.red} weight="bold" />
+                <ArrowDownIcon size={11} color={Colors.red} weight="bold" />
                 <Text style={[sheet.listTitle, { color: Colors.red }]}>SE QUITAN</Text>
               </View>
               <ScrollView style={{ maxHeight: 100 }} showsVerticalScrollIndicator={false}>
@@ -367,7 +367,7 @@ function DeleteConfirmSheet({
               style={({ pressed }) => [sheet.btnConfirm, pressed && { opacity: 0.7 }]}
               onPress={onConfirm}
             >
-              <Trash size={15} color={Colors.white} weight="fill" />
+              <TrashIcon size={15} color={Colors.white} weight="fill" />
               <Text style={sheet.btnConfirmText}>Revertir</Text>
             </Pressable>
           </View>
@@ -419,7 +419,7 @@ export default function IntercambiosScreen() {
           style={({ pressed }) => [styles.analyzeBtn, pressed && { opacity: 0.7 }]}
           onPress={() => router.push('/analizador')}
         >
-          <MagnifyingGlassPlus size={20} color={Colors.white} weight="regular" />
+          <MagnifyingGlassPlusIcon size={20} color={Colors.white} weight="regular" />
         </Pressable>
       </View>
 
@@ -452,7 +452,7 @@ export default function IntercambiosScreen() {
             style={({ pressed }) => [styles.fab, pressed && { opacity: 0.85 }]}
             onPress={() => router.push('/trade-builder')}
           >
-            <Plus size={20} color={Colors.white} weight="bold" />
+            <PlusIcon size={20} color={Colors.white} weight="bold" />
             <Text style={styles.fabText}>Registrar intercambio</Text>
           </Pressable>
         </>

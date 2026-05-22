@@ -57,7 +57,7 @@ function SearchResultRow({
   sticker: Sticker; qty: number; onIncrement: () => void; onDecrement: () => void;
 }) {
   const statusColor = qty === 0 ? Colors.textMuted : qty === 1 ? Colors.owned : Colors.duplicate;
-  const statusLabel = qty === 0 ? 'FALTA' : qty === 1 ? 'TENGO' : `×${qty}`;
+  const statusLabel = qty === 0 ? 'FALTA' : qty === 1 ? 'TENGO' : `+${qty - 1}`;
   const borderLeft  = qty === 0 ? Colors.border : qty === 1 ? Colors.owned : Colors.duplicate;
 
   return (
