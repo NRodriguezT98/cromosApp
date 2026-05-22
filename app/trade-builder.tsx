@@ -138,6 +138,9 @@ export default function TradeBuilderScreen() {
   const [query1, setQuery1] = useState('');
   const [query2, setQuery2] = useState('');
   const [showAll, setShowAll] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const successScale = useRef(new Animated.Value(0.8)).current;
+  const successOpacity = useRef(new Animated.Value(0)).current;
 
   // Filter the base datasets if we received a curated list
   const duplicates = useMemo(() => {
@@ -187,7 +190,12 @@ export default function TradeBuilderScreen() {
 
   const handleConfirm = () => {
     addTrade(givenCodes, receivedCodes);
-    router.back();
+    setConfirmed(true);
+    Animated.parallel([
+      Animated.spring(successScale,   { toValue: 1, useNativeDriver: true, tension: 70, friction: 9 }),
+      Animated.timing(successOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+    ]).start();
+    setTimeout(() => router.back(), 1800);
   };
 
   const givenStickers    = givenCodes.map(c => stickers.find(s => s.code === c)!).filter(Boolean);
@@ -464,6 +472,23 @@ export default function TradeBuilderScreen() {
         </View>
       )}
 
+      {/* ── Success overlay ── */}
+      {confirmed && (
+        <Animated.View style={[styles.successOverlay, { opacity: successOpacity }]}>
+          <Animated.View style={[styles.successCard, { transform: [{ scale: successScale }] }]}>
+            <View style={styles.successIconWrap}>
+              <Check size={38} color={Colors.white} weight="bold" />
+            </View>
+            <Text style={styles.successTitle}>¡Intercambio registrado!</Text>
+            <Text style={styles.successSub}>
+              {givenCodes.length} cromo{givenCodes.length !== 1 ? 's' : ''} dado{givenCodes.length !== 1 ? 's' : ''}
+              {' · '}
+              {receivedCodes.length} recibido{receivedCodes.length !== 1 ? 's' : ''}
+            </Text>
+          </Animated.View>
+        </Animated.View>
+      )}
+
     </KeyboardAvoidingView>
   );
 }
@@ -584,6 +609,36 @@ const styles = StyleSheet.create({
   summaryCode:     { ...Typography.codeM, color: Colors.textPrimary, minWidth: 48 },
   summaryName:     { ...Typography.bodyS, color: Colors.textSecondary, flex: 1 },
   summaryTeam:     { ...Typography.bodyS, color: Colors.textMuted },
+
+  successOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(11,17,32,0.88)',
+    alignItems: 'center', justifyContent: 'center',
+    zIndex: 100,
+  },
+  successCard: {
+    backgroundColor: Colors.bgCard,
+    borderRadius: Radii.xl,
+    borderWidth: 1, borderColor: Colors.owned + '50',
+    paddingVertical: Spacing.xxl, paddingHorizontal: Spacing.xxxl,
+    alignItems: 'center', gap: 10, minWidth: 260,
+  },
+  successIconWrap: {
+    width: 76, height: 76, borderRadius: 38,
+    backgroundColor: Colors.owned,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 8,
+    shadowColor: Colors.owned, shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5, shadowRadius: 16, elevation: 10,
+  },
+  successTitle: {
+    fontFamily: 'DMSans_700Bold', fontSize: 20,
+    color: Colors.textPrimary, textAlign: 'center',
+  },
+  successSub: {
+    fontFamily: 'DMSans_400Regular', fontSize: 13,
+    color: Colors.textMuted, textAlign: 'center',
+  },
 
   summarySep: {
     flexDirection: 'row', alignItems: 'center', marginVertical: Spacing.md,
