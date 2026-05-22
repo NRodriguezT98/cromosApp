@@ -312,21 +312,52 @@ export default function TradeBuilderScreen() {
               Seleccioná los cromos que recibís a cambio.
             </Text>
 
+            {/* Balance en tiempo real */}
+            <View style={styles.balanceBar}>
+              <View style={styles.balanceSide}>
+                <Text style={[styles.balanceCount, { color: Colors.duplicate }]}>{givenCodes.length}</Text>
+                <Text style={styles.balanceTag}>DISTE</Text>
+              </View>
+
+              <View style={styles.balanceCenter}>
+                <ArrowsLeftRight size={16} color={Colors.textMuted} />
+                {receivedCodes.length === 0 && (
+                  <Text style={styles.balanceHint}>0 sel.</Text>
+                )}
+                {receivedCodes.length > 0 && receivedCodes.length < givenCodes.length && (
+                  <View style={[styles.balancePill, { backgroundColor: Colors.duplicate + '20', borderColor: Colors.duplicate + '50' }]}>
+                    <Text style={[styles.balancePillText, { color: Colors.duplicate }]}>
+                      {givenCodes.length - receivedCodes.length} pendiente{givenCodes.length - receivedCodes.length !== 1 ? 's' : ''}
+                    </Text>
+                  </View>
+                )}
+                {receivedCodes.length === givenCodes.length && receivedCodes.length > 0 && (
+                  <View style={[styles.balancePill, { backgroundColor: Colors.owned + '20', borderColor: Colors.owned + '50' }]}>
+                    <Check size={10} color={Colors.owned} weight="bold" />
+                    <Text style={[styles.balancePillText, { color: Colors.owned }]}>Equilibrado</Text>
+                  </View>
+                )}
+                {receivedCodes.length > givenCodes.length && (
+                  <View style={[styles.balancePill, { backgroundColor: Colors.trade + '20', borderColor: Colors.trade + '50' }]}>
+                    <Text style={[styles.balancePillText, { color: Colors.trade }]}>
+                      +{receivedCodes.length - givenCodes.length} a tu favor
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={[styles.balanceSide, { alignItems: 'flex-end' }]}>
+                <Text style={[styles.balanceCount, { color: receivedCodes.length === givenCodes.length && receivedCodes.length > 0 ? Colors.owned : Colors.textPrimary }]}>
+                  {receivedCodes.length}
+                </Text>
+                <Text style={styles.balanceTag}>RECIBIRÁS</Text>
+              </View>
+            </View>
+
             {friendName && (
               <View style={styles.curatedAlert}>
                 <WarningCircle size={16} color={Colors.trade} />
                 <Text style={styles.curatedAlertText}>Mostrando solo cromos ofrecidos por {friendName}</Text>
-              </View>
-            )}
-
-            {givenCodes.length > 0 && receivedCodes.length > 0 && givenCodes.length !== receivedCodes.length && (
-              <View style={[styles.curatedAlert, { borderColor: Colors.duplicate + '40', backgroundColor: Colors.duplicate + '15' }]}>
-                <WarningCircle size={16} color={Colors.duplicate} />
-                <Text style={[styles.curatedAlertText, { color: Colors.duplicate }]}>
-                  {receivedCodes.length > givenCodes.length 
-                    ? `Estás pidiendo más cromos (${receivedCodes.length}) de los que diste (${givenCodes.length}).`
-                    : `Estás dando más cromos (${givenCodes.length}) de los que recibes (${receivedCodes.length}).`}
-                </Text>
               </View>
             )}
 
@@ -545,6 +576,25 @@ const styles = StyleSheet.create({
   toggleBtnActive: { backgroundColor: Colors.trade + '20', borderColor: Colors.trade + '60' },
   toggleBtnText:   { ...Typography.labelM, color: Colors.textMuted },
   toggleBtnTextActive: { color: Colors.trade },
+
+  balanceBar: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: Colors.bgCard, borderRadius: Radii.md,
+    borderWidth: 1, borderColor: Colors.border,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  balanceSide:   { flex: 1 },
+  balanceCenter: { alignItems: 'center', paddingHorizontal: Spacing.md, gap: 6 },
+  balanceCount:  { fontFamily: 'Oswald_700Bold', fontSize: 30, lineHeight: 32 },
+  balanceTag:    { fontFamily: 'DMSans_500Medium', fontSize: 9, letterSpacing: 1.5, color: Colors.textMuted, marginTop: 2 },
+  balanceHint:   { fontFamily: 'DMSans_400Regular', fontSize: 10, color: Colors.textMuted },
+  balancePill: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    borderWidth: 1, borderRadius: Radii.full,
+    paddingHorizontal: 8, paddingVertical: 3,
+  },
+  balancePillText: { fontFamily: 'DMSans_700Bold', fontSize: 10 },
 
   chipsRow: {
     flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap',
