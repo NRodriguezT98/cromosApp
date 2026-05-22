@@ -324,7 +324,8 @@ export function StickersProvider({ children }: { children: React.ReactNode }) {
         app: 'cromitos',
         createdAt: Date.now(),
         quantities: state.quantities,
-        // history excluded intentionally — keeps file small and avoids encoding issues during transfer
+        history,
+        trades,
       };
       // ASCII-safe: escape non-ASCII chars so copy-paste encoding bugs can't corrupt the JSON
       const json = JSON.stringify(backup).replace(
@@ -347,7 +348,7 @@ export function StickersProvider({ children }: { children: React.ReactNode }) {
     } catch (e: any) {
       return e?.message || 'Error desconocido al exportar';
     }
-  }, [state.quantities, history]);
+  }, [state.quantities, history, trades]);
 
   const importBackup = useCallback(async (jsonString: string): Promise<'ok' | 'invalid' | 'error'> => {
     try {
@@ -374,6 +375,12 @@ export function StickersProvider({ children }: { children: React.ReactNode }) {
       if (Array.isArray(history)) {
         setHistory(history);
         storage.set(HISTORY_KEY, JSON.stringify(history));
+      }
+
+      const tradesData = data.trades ?? data.data?.trades;
+      if (Array.isArray(tradesData)) {
+        setTrades(tradesData);
+        storage.set(TRADES_KEY, JSON.stringify(tradesData));
       }
       return 'ok';
     } catch {

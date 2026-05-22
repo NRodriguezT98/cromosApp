@@ -4,9 +4,9 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Typography, Spacing, Radii } from '@/constants/theme';
-import { useStickers, TradeEntry } from '@/context/StickersContext';
-import { Plus, Swap, Trash, ArrowDown, ArrowsLeftRight, ArrowUp, Warning } from 'phosphor-react-native';
-import { TradeModal } from '@/components/ui/TradeModal';
+import { useStickers, TradeEntry, TradeSticker } from '@/context/StickersContext';
+import { Plus, Swap, Trash, ArrowDown, ArrowsLeftRight, ArrowUp, Warning, MagnifyingGlassPlus, X, CaretRight } from 'phosphor-react-native';
+import { useRouter } from 'expo-router';
 
 // Tab bar height + safe area
 const TAB_OFFSET = Platform.OS === 'ios' ? 100 : 80;
@@ -31,35 +31,141 @@ function formatTime(ts: number): string {
   });
 }
 
+// ── Trade Detail Modal ────────────────────────────────────────────────────────
+
+function TradeDetailModal({
+  trade,
+  onClose,
+  onDelete,
+}: {
+  trade: TradeEntry;
+  onClose: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <Modal transparent animationType="slide" onRequestClose={onClose}>
+      <View style={detail.backdrop}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={detail.sheet}>
+          {/* Handle */}
+          <View style={detail.handle} />
+
+          {/* Compact header */}
+          <View style={detail.header}>
+            <View style={detail.headerIcon}>
+              <Swap size={14} color={Colors.trade} weight="fill" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={detail.headerTitle}>Intercambio</Text>
+              <Text style={detail.headerSub}>
+                {new Date(trade.timestamp).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}
+                {' · '}{formatTime(trade.timestamp)}
+              </Text>
+            </View>
+            <Pressable onPress={onClose} hitSlop={14} style={detail.closeBtn}>
+              <X size={16} color={Colors.textMuted} weight="bold" />
+            </Pressable>
+          </View>
+
+          {/* Summary card — same compact style as trade-builder step 2 */}
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={detail.summaryCard}>
+              {/* DISTE */}
+              <View style={detail.labelRow}>
+                <View style={[detail.dot, { backgroundColor: Colors.duplicate }]} />
+                <Text style={[detail.label, { color: Colors.duplicate }]}>
+                  DISTE ({trade.given.length})
+                </Text>
+              </View>
+              {trade.given.map(s => (
+                <View key={s.code} style={detail.row}>
+                  <Text style={detail.code}>{s.code}</Text>
+                  <Text style={detail.name} numberOfLines={1}>{s.name}</Text>
+                  <Text style={detail.team} numberOfLines={1}>{s.teamName}</Text>
+                </View>
+              ))}
+
+              {/* Separator */}
+              <View style={detail.sep}>
+                <View style={detail.sepLine} />
+                <View style={detail.sepIcon}>
+                  <ArrowDown size={12} color={Colors.trade} weight="bold" />
+                </View>
+                <View style={detail.sepLine} />
+              </View>
+
+              {/* RECIBISTE */}
+              <View style={detail.labelRow}>
+                <View style={[detail.dot, { backgroundColor: Colors.owned }]} />
+                <Text style={[detail.label, { color: Colors.owned }]}>
+                  RECIBISTE ({trade.received.length})
+                </Text>
+              </View>
+              {trade.received.map(s => (
+                <View key={s.code} style={detail.row}>
+                  <Text style={detail.code}>{s.code}</Text>
+                  <Text style={detail.name} numberOfLines={1}>{s.name}</Text>
+                  <Text style={detail.team} numberOfLines={1}>{s.teamName}</Text>
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+
+          {/* Delete */}
+          <Pressable
+            style={({ pressed }) => [detail.deleteBtn, pressed && { opacity: 0.75 }]}
+            onPress={onDelete}
+          >
+            <Trash size={14} color={Colors.red} weight="fill" />
+            <Text style={detail.deleteBtnText}>Revertir intercambio</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 // ── Trade card ────────────────────────────────────────────────────────────────
 
-function TradeCard({ trade, onDelete }: { trade: TradeEntry; onDelete: () => void }) {
+function TradeCard({ trade, onDelete, onPress }: { trade: TradeEntry; onDelete: () => void; onPress: () => void }) {
   const MAX_SHOW = 3;
   const givenExtra    = trade.given.length - MAX_SHOW;
   const receivedExtra = trade.received.length - MAX_SHOW;
 
   return (
-    <View style={styles.tradeCard}>
+    <Pressable
+      style={({ pressed }) => [styles.tradeCard, pressed && { opacity: 0.85 }]}
+      onPress={onPress}
+    >
       <View style={styles.tradeCardHeader}>
         <View style={styles.tradeIconWrap}>
           <Swap size={13} color={Colors.trade} weight="fill" />
         </View>
         <Text style={styles.tradeTime}>{formatTime(trade.timestamp)}</Text>
-        <Pressable style={styles.deleteBtn} onPress={onDelete} hitSlop={8}>
-          <Trash size={14} color={Colors.textMuted} />
-        </Pressable>
+        <View style={styles.tradeHeaderRight}>
+          <Text style={styles.tradeTapHint}>Ver detalle</Text>
+          <CaretRight size={12} color={Colors.textMuted} weight="bold" />
+          <Pressable style={styles.deleteBtn} onPress={onDelete} hitSlop={10}>
+            <Trash size={14} color={Colors.textMuted} />
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.tradeBody}>
+        {/* DISTE */}
         <View style={styles.tradeSection}>
           <Text style={[styles.tradeSectionLabel, { color: Colors.duplicate }]}>DISTE</Text>
           {trade.given.slice(0, MAX_SHOW).map(s => (
             <View key={s.code} style={styles.tradeRow}>
-              <Text style={styles.tradeCode}>{s.code}</Text>
+              <View style={[styles.tradeCodeBadge, { borderColor: Colors.duplicate + '40' }]}>
+                <Text style={[styles.tradeCode, { color: Colors.duplicate }]}>{s.code}</Text>
+              </View>
               <Text style={styles.tradeName} numberOfLines={1}>{s.name}</Text>
             </View>
           ))}
-          {givenExtra > 0 && <Text style={styles.tradeMore}>+{givenExtra} más</Text>}
+          {givenExtra > 0 && (
+            <Text style={styles.tradeMore}>+{givenExtra} cromo{givenExtra !== 1 ? 's' : ''} más</Text>
+          )}
         </View>
 
         <View style={styles.tradeSepCol}>
@@ -70,18 +176,23 @@ function TradeCard({ trade, onDelete }: { trade: TradeEntry; onDelete: () => voi
           <View style={styles.tradeSepLine} />
         </View>
 
+        {/* RECIBISTE */}
         <View style={[styles.tradeSection, { flex: 1 }]}>
           <Text style={[styles.tradeSectionLabel, { color: Colors.owned }]}>RECIBISTE</Text>
           {trade.received.slice(0, MAX_SHOW).map(s => (
             <View key={s.code} style={styles.tradeRow}>
-              <Text style={styles.tradeCode}>{s.code}</Text>
+              <View style={[styles.tradeCodeBadge, { borderColor: Colors.owned + '40' }]}>
+                <Text style={[styles.tradeCode, { color: Colors.owned }]}>{s.code}</Text>
+              </View>
               <Text style={styles.tradeName} numberOfLines={1}>{s.name}</Text>
             </View>
           ))}
-          {receivedExtra > 0 && <Text style={styles.tradeMore}>+{receivedExtra} más</Text>}
+          {receivedExtra > 0 && (
+            <Text style={styles.tradeMore}>+{receivedExtra} cromo{receivedExtra !== 1 ? 's' : ''} más</Text>
+          )}
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -269,9 +380,10 @@ function DeleteConfirmSheet({
 type DaySection = { title: string; data: TradeEntry[] };
 
 export default function IntercambiosScreen() {
+  const router = useRouter();
   const { trades, deleteTrade, quantities } = useStickers();
-  const [modalOpen, setModalOpen]           = useState(false);
   const [pendingDelete, setPendingDelete]   = useState<TradeEntry | null>(null);
+  const [detailTrade, setDetailTrade]       = useState<TradeEntry | null>(null);
 
   const sections: DaySection[] = useMemo(() => {
     const groups: Record<string, TradeEntry[]> = {};
@@ -297,14 +409,22 @@ export default function IntercambiosScreen() {
     <View style={styles.screen}>
       {/* ── Header ── */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Intercambios</Text>
-        {trades.length > 0 && (
-          <Text style={styles.headerSub}>{trades.length} registrado{trades.length !== 1 ? 's' : ''}</Text>
-        )}
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>Intercambios</Text>
+          {trades.length > 0 && (
+            <Text style={styles.headerSub}>{trades.length} registrado{trades.length !== 1 ? 's' : ''}</Text>
+          )}
+        </View>
+        <Pressable 
+          style={({ pressed }) => [styles.analyzeBtn, pressed && { opacity: 0.7 }]}
+          onPress={() => router.push('/analizador')}
+        >
+          <MagnifyingGlassPlus size={20} color={Colors.white} weight="regular" />
+        </Pressable>
       </View>
 
       {trades.length === 0 ? (
-        <EmptyState onPress={() => setModalOpen(true)} />
+        <EmptyState onPress={() => router.push('/trade-builder')} />
       ) : (
         <>
           <SectionList
@@ -318,15 +438,19 @@ export default function IntercambiosScreen() {
               </View>
             )}
             renderItem={({ item }) => (
-              <TradeCard trade={item} onDelete={() => handleDelete(item.id)} />
+              <TradeCard
+                trade={item}
+                onDelete={() => handleDelete(item.id)}
+                onPress={() => setDetailTrade(item)}
+              />
             )}
             stickySectionHeadersEnabled={false}
           />
 
-          {/* FAB — solo visible cuando hay trades */}
+          {/* ── FAB ── */}
           <Pressable
             style={({ pressed }) => [styles.fab, pressed && { opacity: 0.85 }]}
-            onPress={() => setModalOpen(true)}
+            onPress={() => router.push('/trade-builder')}
           >
             <Plus size={20} color={Colors.white} weight="bold" />
             <Text style={styles.fabText}>Registrar intercambio</Text>
@@ -334,7 +458,6 @@ export default function IntercambiosScreen() {
         </>
       )}
 
-      <TradeModal visible={modalOpen} onClose={() => setModalOpen(false)} />
 
       {pendingDelete && (
         <DeleteConfirmSheet
@@ -342,6 +465,17 @@ export default function IntercambiosScreen() {
           quantities={quantities}
           onConfirm={confirmDelete}
           onCancel={() => setPendingDelete(null)}
+        />
+      )}
+
+      {detailTrade && (
+        <TradeDetailModal
+          trade={detailTrade}
+          onClose={() => setDetailTrade(null)}
+          onDelete={() => {
+            setDetailTrade(null);
+            setPendingDelete(detailTrade);
+          }}
         />
       )}
     </View>
@@ -358,9 +492,16 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 56 : 40,
     paddingBottom: Spacing.md,
     borderBottomWidth: 1, borderBottomColor: Colors.border,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
   headerTitle: { ...Typography.titleXL, color: Colors.textPrimary },
   headerSub:   { ...Typography.bodyS, color: Colors.textMuted, marginTop: 4 },
+  analyzeBtn: {
+    width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.trade,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: Colors.trade, shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4, shadowRadius: 4, elevation: 4,
+  },
 
   listContent: { padding: Spacing.lg, paddingBottom: TAB_OFFSET + 60 },
 
@@ -378,24 +519,36 @@ const styles = StyleSheet.create({
   },
   tradeCardHeader: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: Spacing.md, paddingVertical: 8,
+    paddingHorizontal: Spacing.md, paddingVertical: 9,
     borderBottomWidth: 1, borderBottomColor: Colors.border,
+    backgroundColor: Colors.bgCardAlt,
   },
   tradeIconWrap: {
-    width: 22, height: 22, borderRadius: 11,
-    backgroundColor: Colors.trade + '20',
+    width: 24, height: 24, borderRadius: 12,
+    backgroundColor: Colors.trade + '25',
     alignItems: 'center', justifyContent: 'center',
   },
-  tradeTime:  { ...Typography.bodyS, color: Colors.textMuted, flex: 1 },
-  deleteBtn:  { padding: 4 },
+  tradeTime:        { fontFamily: 'DMSans_500Medium', fontSize: 12, color: Colors.textSecondary, flex: 1 },
+  tradeHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  tradeTapHint:     { fontFamily: 'DMSans_400Regular', fontSize: 11, color: Colors.textMuted },
+  deleteBtn:        { padding: 4, marginLeft: 6 },
 
-  tradeBody:         { flexDirection: 'row', padding: Spacing.md },
-  tradeSection:      { flex: 1 },
-  tradeSectionLabel: { ...Typography.labelS, letterSpacing: 1.5, marginBottom: 6 },
-  tradeRow:          { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 },
-  tradeCode:         { ...Typography.codeM, color: Colors.textPrimary, minWidth: 46 },
-  tradeName:         { ...Typography.bodyS, color: Colors.textSecondary, flex: 1 },
-  tradeMore:         { ...Typography.bodyS, color: Colors.textMuted, marginTop: 2 },
+  tradeBody:    { flexDirection: 'row', padding: Spacing.md, gap: 0 },
+  tradeSection: { flex: 1 },
+  tradeSectionLabel: {
+    fontFamily: 'DMSans_700Bold', fontSize: 10, letterSpacing: 2,
+    marginBottom: 8,
+  },
+  tradeRow:     { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 5 },
+  tradeCodeBadge: {
+    paddingHorizontal: 6, paddingVertical: 2,
+    borderRadius: 5, borderWidth: 1,
+    minWidth: 44, alignItems: 'center',
+    backgroundColor: Colors.bgCardAlt,
+  },
+  tradeCode:    { fontFamily: 'DMSans_700Bold', fontSize: 11 },
+  tradeName:    { fontFamily: 'DMSans_500Medium', fontSize: 13, color: Colors.textPrimary, flex: 1 },
+  tradeMore:    { fontFamily: 'DMSans_400Regular', fontSize: 11, color: Colors.textMuted, marginTop: 2, fontStyle: 'italic' },
 
   tradeSepCol: { width: 28, alignItems: 'center', justifyContent: 'center', paddingTop: 20 },
   tradeSepLine: { flex: 1, width: 1, backgroundColor: Colors.border },
@@ -479,6 +632,74 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   fabText: { ...Typography.labelL, color: Colors.white, letterSpacing: 0.5 },
+});
+
+// ── Trade Detail Modal styles ──────────────────────────────────────────────────
+const detail = StyleSheet.create({
+  backdrop: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: Colors.bgCard,
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    borderTopWidth: 1, borderColor: Colors.border,
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    maxHeight: '85%',
+  },
+  handle: {
+    width: 36, height: 4, borderRadius: 2,
+    backgroundColor: Colors.border,
+    alignSelf: 'center', marginTop: 12, marginBottom: 16,
+  },
+  header: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    marginBottom: 16,
+    paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: Colors.border,
+  },
+  headerIcon: {
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: Colors.trade + '20',
+    borderWidth: 1, borderColor: Colors.trade + '40',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  headerTitle: { fontFamily: 'DMSans_700Bold', fontSize: 15, color: Colors.textPrimary },
+  headerSub:   { fontFamily: 'DMSans_400Regular', fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  closeBtn: {
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: Colors.bgCardAlt, borderWidth: 1, borderColor: Colors.border,
+    alignItems: 'center', justifyContent: 'center',
+  },
+
+  summaryCard: {
+    backgroundColor: Colors.bg, borderRadius: Radii.lg,
+    borderWidth: 1, borderColor: Colors.border,
+    padding: Spacing.lg, marginBottom: Spacing.md,
+  },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  dot:      { width: 8, height: 8, borderRadius: 4 },
+  label:    { ...Typography.labelS, letterSpacing: 1.5 },
+  row:      { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  code:     { ...Typography.codeM, color: Colors.textPrimary, minWidth: 48 },
+  name:     { ...Typography.bodyS, color: Colors.textSecondary, flex: 1 },
+  team:     { ...Typography.bodyS, color: Colors.textMuted },
+  sep:      { flexDirection: 'row', alignItems: 'center', marginVertical: Spacing.md },
+  sepLine:  { flex: 1, height: 1, backgroundColor: Colors.border },
+  sepIcon:  {
+    width: 26, height: 26, borderRadius: 13,
+    backgroundColor: Colors.trade + '20', borderWidth: 1, borderColor: Colors.trade + '40',
+    alignItems: 'center', justifyContent: 'center', marginHorizontal: 8,
+  },
+
+  deleteBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    marginTop: 8, paddingVertical: 13,
+    borderRadius: Radii.full,
+    borderWidth: 1, borderColor: Colors.red + '40',
+    backgroundColor: Colors.red + '10',
+  },
+  deleteBtnText: { fontFamily: 'DMSans_600SemiBold', fontSize: 14, color: Colors.red },
 });
 
 // ── Delete sheet styles ────────────────────────────────────────────────────────

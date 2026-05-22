@@ -66,6 +66,7 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0B1120' } }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="seleccion/[code]" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="trade-builder" options={{ presentation: 'formSheet' }} />
       </Stack>
     </StickersProvider>
   );
