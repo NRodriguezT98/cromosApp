@@ -195,7 +195,7 @@ export default function TradeBuilderScreen() {
       Animated.spring(successScale,   { toValue: 1, useNativeDriver: true, tension: 70, friction: 9 }),
       Animated.timing(successOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
     ]).start();
-    setTimeout(() => router.back(), 1800);
+    setTimeout(() => router.navigate('/(tabs)/intercambios'), 1800);
   };
 
   const givenStickers    = givenCodes.map(c => stickers.find(s => s.code === c)!).filter(Boolean);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput, KeyboardAvoidingView,
   Platform, ScrollView,
@@ -105,9 +105,28 @@ export default function AnalizadorScreen() {
     { id: '1', name: 'Amigo 1', text: '' }
   ]);
   const [analyzed, setAnalyzed] = useState(false);
-  
-  const [canGive, setCanGive] = useState<MatchResult[]>([]);
-  const [canReceive, setCanReceive] = useState<MatchResult[]>([]);
+
+  // Parsed maps — solo se recomputan cuando cambian las listas o se analiza
+  const { needsMap, swapsMap } = useMemo(() => {
+    if (!analyzed) return { needsMap: {} as Record<string,string[]>, swapsMap: {} as Record<string,string[]> };
+    const validProfiles = profiles.filter(p => p.text.trim().length > 0);
+    return parseMultipleLists(validProfiles, stickers);
+  }, [analyzed, profiles, stickers]);
+
+  // Resultados reactivos — se actualizan automáticamente cuando cambian las cantidades
+  const canGive = useMemo<MatchResult[]>(() =>
+    Object.entries(needsMap)
+      .filter(([code]) => (quantities[code] ?? 0) > 1)
+      .map(([code, friends]) => ({ sticker: stickers.find(s => s.code === code)!, friends }))
+      .filter(m => m.sticker),
+  [needsMap, quantities, stickers]);
+
+  const canReceive = useMemo<MatchResult[]>(() =>
+    Object.entries(swapsMap)
+      .filter(([code]) => (quantities[code] ?? 0) === 0)
+      .map(([code, friends]) => ({ sticker: stickers.find(s => s.code === code)!, friends }))
+      .filter(m => m.sticker),
+  [swapsMap, quantities, stickers]);
 
   const addProfile = () => {
     setProfiles(prev => [...prev, { id: Date.now().toString(), name: `Amigo ${prev.length + 1}`, text: '' }]);
@@ -122,34 +141,8 @@ export default function AnalizadorScreen() {
   };
 
   const handleAnalyze = () => {
-    // Solo analizamos perfiles que tengan texto
-    const validProfiles = profiles.filter(p => p.text.trim().length > 0);
-    if (validProfiles.length === 0) return;
-    
-    const { needsMap, swapsMap } = parseMultipleLists(validProfiles, stickers);
-    
-    // Lo que le puedes dar: cromos que ellos necesitan y tú tienes repetidos (> 1)
-    const giveResults: MatchResult[] = [];
-    Object.entries(needsMap).forEach(([code, friends]) => {
-      const qty = quantities[code] ?? 0;
-      if (qty > 1) {
-        const sticker = stickers.find(s => s.code === code);
-        if (sticker) giveResults.push({ sticker, friends });
-      }
-    });
-    
-    // Lo que puedes recibir: cromos que ellos tienen repetidos y a ti te faltan (== 0)
-    const receiveResults: MatchResult[] = [];
-    Object.entries(swapsMap).forEach(([code, friends]) => {
-      const qty = quantities[code] ?? 0;
-      if (qty === 0) {
-        const sticker = stickers.find(s => s.code === code);
-        if (sticker) receiveResults.push({ sticker, friends });
-      }
-    });
-
-    setCanGive(giveResults);
-    setCanReceive(receiveResults);
+    const hasText = profiles.some(p => p.text.trim().length > 0);
+    if (!hasText) return;
     setAnalyzed(true);
   };
 
