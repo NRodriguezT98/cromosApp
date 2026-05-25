@@ -7,16 +7,15 @@ import { FlashList } from '@shopify/flash-list';
 
 import { Colors, Typography, Spacing, Radii } from '@/constants/theme';
 import { useStickers, Section, Sticker } from '@/context/StickersContext';
-import { StickerCell, ViewMode } from '@/components/ui/StickerCell';
+import { StickerBubble } from '@/components/ui/StickerBubble';
 import { FlagImage } from '@/components/ui/FlagImage';
 import {
-  SquaresFourIcon, ListIcon, GridFourIcon, RowsIcon,
   ArrowsDownUpIcon, CaretDownIcon, CaretUpIcon, CheckIcon,
   MagnifyingGlassIcon, XIcon, ShareNetworkIcon,
 } from 'phosphor-react-native';
 import { ExportModal } from '@/components/ui/ExportModal';
 
-const COLS: Record<ViewMode, number> = { tiny: 6, small: 4, medium: 3, list: 1 };
+const COLS = 5;
 
 type SubTab   = 'all' | 'owned' | 'missing' | 'duplicates';
 type SortMode = 'original' | 'alpha' | 'progress_desc' | 'progress_asc';
@@ -35,19 +34,9 @@ const SORT_OPTIONS: { key: SortMode; label: string; sub: string }[] = [
   { key: 'progress_asc',  label: 'Menos avanzadas',     sub: 'Menor % completado primero'   },
 ];
 
-const VIEW_OPTIONS: ViewMode[] = ['tiny', 'small', 'medium', 'list'];
-
 type AlbumFlatItem =
   | { kind: 'header'; section: Section; count: number; pct: number; owned: number; isCollapsed: boolean }
   | { kind: 'row'; stickers: Sticker[] };
-
-function ViewIcon({ mode, color }: { mode: ViewMode; color: string }) {
-  const size = 15; const w = 'fill' as const;
-  if (mode === 'tiny')   return <GridFourIcon    size={size} color={color} weight={w} />;
-  if (mode === 'small')  return <SquaresFourIcon size={size} color={color} weight={w} />;
-  if (mode === 'medium') return <RowsIcon        size={size} color={color} weight={w} />;
-  return                        <ListIcon        size={size} color={color} weight={w} />;
-}
 
 // ── Search result row ──────────────────────────────────────────────────────
 
@@ -159,7 +148,6 @@ function norm(s: string) {
 export default function AlbumScreen() {
   const { sections, stickers, quantities, getSectionStats, increment, decrement } = useStickers();
 
-  const [mode, setMode]               = useState<ViewMode>('small');
   const [subTab, setSubTab]           = useState<SubTab>('all');
   const [sortMode, setSortMode]       = useState<SortMode>('original');
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
@@ -197,8 +185,6 @@ export default function AlbumScreen() {
     else if (current === 2) showToast(`− ${sticker.code} · ${sticker.name} — sin repetidos`);
     else showToast(`− ${sticker.code} · ${sticker.name} — quedan ${current - 2} repetidos`);
   }, [quantities, decrement, showToast]);
-
-  const cols = COLS[mode];
 
   const activeTab   = SUB_TABS.find(t => t.key === subTab)!;
   const sortIsActive = sortMode !== 'original';
@@ -260,11 +246,7 @@ export default function AlbumScreen() {
         const isCollapsed = collapsed.has(sec.code);
         let rows: typeof secStickers[] = [];
         if (!isCollapsed) {
-          if (mode === 'list') {
-            rows = secStickers.map(s => [s]);
-          } else {
-            for (let i = 0; i < secStickers.length; i += cols) rows.push(secStickers.slice(i, i + cols));
-          }
+          for (let i = 0; i < secStickers.length; i += COLS) rows.push(secStickers.slice(i, i + COLS));
         }
         return {
           section: sec,
@@ -287,11 +269,11 @@ export default function AlbumScreen() {
     }
 
     return result;
-  }, [sections, baseStickers, mode, cols, subTab, collapsed, sortMode, getSectionStats]);
+  }, [sections, baseStickers, subTab, collapsed, sortMode, getSectionStats]);
 
   const activeSortLabel = SORT_OPTIONS.find(o => o.key === sortMode)?.label ?? '';
 
-  const estimatedItemSize = mode === 'list' ? 60 : mode === 'tiny' ? 80 : mode === 'medium' ? 160 : 120;
+  const estimatedItemSize = 88;
 
   const flatData = useMemo((): AlbumFlatItem[] => {
     return sectionedData.flatMap(g => [
@@ -332,20 +314,6 @@ export default function AlbumScreen() {
             >
               <ShareNetworkIcon size={16} color={Colors.white} weight="bold" />
             </Pressable>
-          )}
-          {!isSearching && (
-            <View style={styles.viewToggle}>
-              {VIEW_OPTIONS.map(opt => {
-                const active = mode === opt;
-                const color  = active ? activeTab.color : Colors.textMuted;
-                return (
-                  <Pressable key={opt} onPress={() => setMode(opt)}
-                    style={[styles.toggleBtn, active && [styles.toggleBtnActive, { backgroundColor: activeTab.color + '20', borderColor: activeTab.color + '50' }]]}>
-                    <ViewIcon mode={opt} color={color} />
-                  </Pressable>
-                );
-              })}
-            </View>
           )}
         </View>
       </View>
@@ -503,20 +471,13 @@ export default function AlbumScreen() {
               );
             }
             const { stickers: row } = item;
-            if (mode === 'list') {
-              const sticker = row[0];
-              return (
-                <StickerCell sticker={sticker} qty={quantities[sticker.code] ?? 0}
-                  mode="list" onTap={() => increment(sticker.code)} onLongPress={() => decrement(sticker.code)} />
-              );
-            }
             return (
               <View style={styles.gridRow}>
                 {row.map(sticker => (
-                  <StickerCell key={sticker.code} sticker={sticker} qty={quantities[sticker.code] ?? 0}
-                    mode={mode} onTap={() => increment(sticker.code)} onLongPress={() => decrement(sticker.code)} />
+                  <StickerBubble key={sticker.code} sticker={sticker} qty={quantities[sticker.code] ?? 0}
+                    onTap={() => increment(sticker.code)} onLongPress={() => decrement(sticker.code)} />
                 ))}
-                {row.length < cols && Array.from({ length: cols - row.length }).map((_, i) => (
+                {row.length < COLS && Array.from({ length: COLS - row.length }).map((_, i) => (
                   <View key={`ph-${i}`} style={styles.cellPh} />
                 ))}
               </View>
@@ -603,13 +564,6 @@ const styles = StyleSheet.create({
     height: 34,
   },
   sortBtnLabel: { fontFamily: 'DMSans_500Medium', fontSize: 11, color: Colors.textMuted },
-  viewToggle: {
-    flexDirection: 'row', gap: 2,
-    backgroundColor: Colors.bgCard, borderRadius: Radii.md,
-    padding: 3, borderWidth: 1, borderColor: Colors.border,
-  },
-  toggleBtn: { padding: 7, borderRadius: Radii.sm, alignItems: 'center', justifyContent: 'center' },
-  toggleBtnActive: { borderWidth: 1 },
   subTabsScroll: { flexGrow: 0, flexShrink: 0, borderBottomWidth: 1, borderBottomColor: Colors.border },
   subTabsRow: { flexDirection: 'row', paddingHorizontal: Spacing.lg },
   subTabBtn: {
@@ -627,8 +581,8 @@ const styles = StyleSheet.create({
   miniBar: { flex: 1, height: 3, backgroundColor: Colors.bgCardAlt, borderRadius: 2, overflow: 'hidden' },
   miniBarFill: { height: 3, borderRadius: 2 },
   countBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: Radii.full, borderWidth: 1 },
-  gridRow: { flexDirection: 'row', gap: 5, marginBottom: 5 },
-  cellPh: { flex: 1, aspectRatio: 0.72 },
+  gridRow: { flexDirection: 'row', gap: 6, marginBottom: 4 },
+  cellPh: { flex: 1 },
   empty: { alignItems: 'center', justifyContent: 'center', padding: Spacing.xxl, marginTop: 60 },
   fab: {
     position: 'absolute', bottom: 90, alignSelf: 'center',
